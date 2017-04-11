@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
 #include <linux/random.h>
 #include <sys/syscall.h>
@@ -55,10 +56,9 @@ getrandom(void *buffer, size_t length, unsigned int flags)
 
 
 
-uint32_t convert(mpz_t n)
+uint32_t convert(uint64_t * nn)
 {
   uint32_t steps = 0;
-  size_t i = 0;
 
   /**
    * Here we start making a bunch of assumptions.
@@ -66,58 +66,50 @@ uint32_t convert(mpz_t n)
    * (in bits) of a mp_limb_t.
    * Secondly, the amount of zeros to check, "d" here is 8.
    */
-  assert(sizeof(mp_limb_t) == 8);
-  assert(n->_mp_size == 24);
-#define mp_size 24
 
-  uint64_t * restrict nn = n->_mp_d;
-
-#define distinguished(x) ((x[23] & (ULLONG_MAX << (64-8))) == 0)
+#define strip_size 8
+#define distinguished(x) ((x[23] & (~(ULLONG_MAX >> strip_size)))) == 0
+#define lbindex(x) __builtin_clzll(x);
 
   while (!distinguished(nn)) {
-    for (i = 0; i < 64; i+=4) {
-      if (((nn[23] | nn[22]) & (0x0F << i)) != 0) break;
-    }
-    if (i == 64) {
-      /**
-       * We found no distinguished point for the next 64 steps.
-       * Boost it!
-       */
-      const __int128_t a = nn[23] * gg;
-      mpn_lshift(nn, nn, 64, 0);
-      mpn_add_n(nn, nn, (mp_limb_t *) &a, 24); // YOLO
-      steps += 64;
-    } else {
-      for (; i < 64; i+=4) {
-        if ((nn[23] & (0x0F << i)) != 0)  break;
+    /**
+     * Here we try to find a strip of zeros for "w2" bits.
+     * When we find one (up to w2 = 64), then we jump of w = w/2.
+     * I tried to optimize this code:
+     * - by integrating the if statement above with the for loop invariant;
+     * - by making the loop algebraic (i.e. no if-s), given that in the
+     *   generated assembly I read a lot of jumps.
+     * Unfortunately, both approaches actually lead to a slow down in the code.
+     */
+    uint64_t x = nn[23];
+    if (x == 0) return steps;
+    uint32_t first_bit = lbindex(x);
+    uint32_t second_bit = 0;
+
+    while (x != 0) {
+      /* clear that bit */
+      x &= ~(0x8000000000000000 >> first_bit);
+
+      if (x == 0) {
+        const uint32_t w = 64 - first_bit;
+        if (w > strip_size) {
+          return steps + first_bit + 1;
+        } else {
+          /**
+           * We found no distinguished point.
+           */
+          const uint64_t a = mpn_lshift(nn, nn, 24, 36) * gg;
+          mpn_add_1(nn, nn, 24, a);
+          steps += 36;
+        }
+      } else {
+        second_bit = lbindex(x);
+        if (second_bit - first_bit > strip_size) {
+          return steps + first_bit + 1;
+        } else {
+          first_bit = second_bit;
+        }
       }
-    }
-    if (i == 64) {
-      /**
-       * We found no distinguished point for the next 32 steps.
-       * Boost it!
-       */
-      const uint64_t a = nn[23] >> 32 * gg;
-      mpn_lshift(nn, nn, 32, 0);
-      mpn_add_1(nn, nn, 24, a);
-      steps += 32;
-    } else if (i >= 32) {
-      /**
-       * We found no distinguished point for the next 16 steps.
-       * Boost it!
-       */
-      const uint64_t a = (nn[23] & (ULLONG_MAX << 32)) * gg;
-      mpn_lshift(nn, nn, 16, 0);
-      mpn_add_1(nn, nn, 24, a);
-      steps += 16;
-    } else {
-      /**
-       * If there is nothing else to do, then just multiply by two.
-       */
-      if (mpn_lshift(nn, nn, 24, 1)) {
-        mpn_add_1(nn, nn, 24, gg);
-      }
-      steps++;
     }
   }
   return steps;
@@ -129,7 +121,7 @@ uint32_t naif_convert(mpz_t n)
   uint32_t i;
   mpz_t t;
   mpz_init_set_ui(t, 1);
-  mpz_mul_2exp(t, t, 1536-8);
+  mpz_mul_2exp(t, t, 1536-strip_size);
 
 
   for (i = 0; mpz_cmp(n, t) > -1; i++) {
@@ -150,7 +142,7 @@ int main()
   unsigned long int _rseed;
 
   gmp_randinit_default(_rstate);
-  getrandom(&_rseed, sizeof(unsigned long int), GRND_RANDOM);
+  getrandom(&_rseed, sizeof(unsigned long int), GRND_NONBLOCK); //GRND_RANDOM
   gmp_randseed_ui(_rstate, _rseed);
 
   mpz_t n, n0;
@@ -158,16 +150,25 @@ int main()
 
   INIT_TIMEIT();
   uint32_t converted;
-  for (int i=0; i < 1e4; i++) {
+  for (int i=0; i < 1e5; i++) {
     mpz_urandomm(n0, _rstate, p);
     mpz_set(n, n0);
     START_TIMEIT();
-    converted = convert(n);
+    converted = convert(n->_mp_d);
     END_TIMEIT();
     mpz_set(n, n0);
     assert(converted == naif_convert(n));
   }
   printf(TIMEIT_FORMAT "\n", GET_TIMEIT());
+
+
+  /* memset(n->_mp_d, 0, 24*8); */
+  /* memset(n0->_mp_d, 0, 24*8); */
+  /* n0->_mp_d[0] = 13423523; */
+  /* n0->_mp_d[1] = 1; */
+  /* uint64_t v[64] = {0}; */
+  /* unpack(v, n->_mp_d); */
+  /* pack(n0, v); */
 
   mpz_clears(n, n0, p, g, NULL);
   return 0;
