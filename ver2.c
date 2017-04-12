@@ -68,14 +68,9 @@ uint32_t convert(uint64_t * nn)
    */
 
 #define strip_size 8
-#define halfstrip_size 4
-  /** Check if x has a halfstrip starting from start */
-#define halfstrip(x, start) (((x) << (start)) & 0xF000000000000000)
 #define distinguished(x) ((x[23] & (~(ULLONG_MAX >> strip_size)))) == 0
 #define lbindex(x) __builtin_clzll(x);
-#define tbindex(x) __builtin_ctzll(x);
 
-  uint32_t w2 = 0;
   while (!distinguished(nn)) {
     /**
      * Here we try to find a strip of zeros for "w2" bits.
@@ -87,24 +82,35 @@ uint32_t convert(uint64_t * nn)
      * Unfortunately, both approaches actually lead to a slow down in the code.
      */
     uint64_t x = nn[23];
+    if (x == 0) return steps;
+    uint32_t first_bit = lbindex(x);
+    uint32_t second_bit = 0;
 
-    for (w2 = 4; w2 < 32; w2 += halfstrip_size) {
-      if (halfstrip(x, w2) == 0) {
-        const uint64_t previous_strip = halfstrip(x, w2-halfstrip_size);
-        uint32_t before = tbindex(previous_strip); before -= 60;
-        const uint64_t next_strip =  halfstrip(x, w2+halfstrip_size);
-        uint32_t after = lbindex(next_strip); if (next_strip == 0) after = 4;
-        if (before + after >= halfstrip_size) {
-          return steps + w2 - before;
+    while (x != 0) {
+      /* clear that bit */
+      x &= ~(0x8000000000000000 >> first_bit);
+
+      if (x == 0) {
+        const uint32_t w = 64 - first_bit;
+        if (w > strip_size) {
+          return steps + first_bit + 1;
+        } else {
+          /**
+           * We found no distinguished point.
+           */
+          const uint64_t a = mpn_lshift(nn, nn, 24, 36) * gg;
+          mpn_add_1(nn, nn, 24, a);
+          steps += 36;
+        }
+      } else {
+        second_bit = lbindex(x);
+        if (second_bit - first_bit > strip_size) {
+          return steps + first_bit + 1;
+        } else {
+          first_bit = second_bit;
         }
       }
     }
-    /**
-     * We found no distinguished point.
-     */
-    const uint64_t a = mpn_lshift(nn, nn, 24, 16) * gg;
-    mpn_add_1(nn, nn, 32, a);
-    steps += 16;
   }
   return steps;
 }
@@ -143,17 +149,15 @@ int main()
   mpz_inits(n, n0, NULL);
 
   INIT_TIMEIT();
-  uint32_t converted, expected;
-  for (int i=0; i < 1e6; i++) {
+  uint32_t converted;
+  for (int i=0; i < 1e5; i++) {
     mpz_urandomm(n0, _rstate, p);
     mpz_set(n, n0);
     START_TIMEIT();
     converted = convert(n->_mp_d);
     END_TIMEIT();
     mpz_set(n, n0);
-    expected = naif_convert(n);
-    if (converted != expected) printf("%d %d\n", converted, expected);
-    assert(converted == expected);
+    assert(converted == naif_convert(n));
   }
   printf(TIMEIT_FORMAT "\n", GET_TIMEIT());
 
