@@ -56,31 +56,23 @@ getrandom(void *buffer, size_t length, unsigned int flags)
 
 
 INIT_TIMEIT();
-static const uint32_t strip_size = 8;
+static const uint32_t strip_size = 16;
+static uint8_t lookup[256];
+static uint8_t offset[256];
 
-uint32_t convert(uint64_t * nn)
+uint32_t convert(uint64_t *nn)
 {
   uint32_t steps = 0;
-
   /**
    * Here we start making a bunch of assumptions.
    * First, we assume the "w" here is 64 bits, which should be the size
    * (in bits) of a mp_limb_t.
    * Secondly, the amount of zeros to check, "d" here is 8.
    */
-  static const uint32_t window = 32;
-  static const uint32_t strip_size = 16;
-  static const uint32_t halfstrip_size = strip_size/2;
-  static const uint64_t topmask = ~(ULLONG_MAX >> halfstrip_size);
-  static const uint64_t topbigmask = ~(ULLONG_MAX >> strip_size);
-  //static const uint64_t tailmask = (1 << halfstrip_size) - 1;
-
-  /** Check if x has a halfstrip starting from start */
-#define halfstrip(x, start) (((x)) << (start)) & topmask)
+  static const uint32_t window = (32+30) /8;
+  mpz_t a;
+  mpz_init(a);
 #define distinguished(x) (((x)[23] & (~(ULLONG_MAX >> strip_size)))) == 0
-#define lbindex(x) __builtin_clzll(x);
-#define tbindex(x) __builtin_ctzll(x);
-
   while (!distinguished(nn)) {
     /**
      * Here we try to find a strip of zeros for "w2" bits.
@@ -91,17 +83,14 @@ uint32_t convert(uint64_t * nn)
      *   generated assembly I read a lot of jumps.
      * Unfortunately, both approaches actually lead to a slow down in the code.
      */
-    uint64_t x = nn[23];
-    uint32_t w;
-
     START_TIMEIT();
-    for (uint32_t w2 = halfstrip_size; w2 < window*2-halfstrip_size; w2 += halfstrip_size) {
-      if (!(x & (topmask >> w2))) {
-        for (w = w2-1; !(x & (topmask >> w)); w--);
-        ++w;
-        if (!(x & (topbigmask >> w))) return steps + w;
-      }
+    const uint8_t *x = (uint8_t *) &nn[22];
+    uint8_t *y = memrchr(x, '\0', window*2-1);
+
+    if (y  && y[-1] <= lookup[y[+1]]) {
+      return steps + (x + 15 - y)*8 - offset[y[+1]];
     }
+
     END_TIMEIT();
     /**
      * We found no distinguished point.
@@ -110,6 +99,7 @@ uint32_t convert(uint64_t * nn)
     mpn_add_1(nn, nn, 24, a);
     steps += window;
   }
+  mpz_clear(a);
   return steps;
 }
 
@@ -119,7 +109,7 @@ uint32_t naif_convert(mpz_t n)
   uint32_t i;
   mpz_t t;
   mpz_init_set_ui(t, 1);
-  mpz_mul_2exp(t, t, 1536-strip_size);
+  mpz_mul_2exp(t, t, 1536-16);
 
 
   for (i = 0; mpz_cmp(n, t) > -1; i++) {
@@ -143,11 +133,17 @@ int main()
   getrandom(&_rseed, sizeof(unsigned long int), GRND_NONBLOCK);
   gmp_randseed_ui(_rstate, _rseed);
 
-  mpz_t n, n0;
-  mpz_inits(n, n0, NULL);
+  for (uint32_t i = 0; i <= 0xFF; i++) {
+    uint32_t j = ffs(i) ? ffs(i) - 1 : 8;
+    lookup[i] = 0xFF >> (8-j);
+    offset[i] = j;
+  }
 
   uint32_t converted;
-  for (int i=0; i < 1e4; i++) {
+  for (uint64_t i=0; i < 1e4; i++) {
+    mpz_t n, n0;
+    mpz_inits(n, n0, NULL);
+
     mpz_urandomm(n0, _rstate, p);
     mpz_set(n, n0);
     converted = convert(n->_mp_d);
@@ -157,6 +153,7 @@ int main()
     if (converted != expected) printf("%d %d\n", converted, expected);
     assert(converted == expected);
 #endif
+    mpz_clears(n, n0, NULL);
   }
   printf(TIMEIT_FORMAT "\n", GET_TIMEIT());
 
@@ -169,7 +166,7 @@ int main()
   /* unpack(v, n->_mp_d); */
   /* pack(n0, v); */
 
-  mpz_clears(n, n0, p, g, NULL);
+  mpz_clears(p, g, NULL);
   return 0;
 
 }
