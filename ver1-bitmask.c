@@ -48,7 +48,6 @@ const static char* g_str =
 
 mpz_t p, g;
 uint32_t gg = 11510609;
-uint128_t gg128 = 11510609;
 
 static uint8_t lookup[256];
 static uint8_t offset[256];
@@ -64,19 +63,18 @@ INIT_TIMEIT();
 #define strip_size 16
 #define halfstrip_size ((strip_size)/2)
 
-size_t i;
-
 static inline
 void add_1(uint64_t *b, const size_t start, const size_t len, uint64_t a)
 {
-  for (i = start; a != 0; i = (i+1)%len) {
+  for (size_t i = start; a != 0; i = (i+1)%len) {
     const uint64_t r = b[i] + a;
     a = (r < a);
     b[i] = r;
   }
-  /** we don't check for overflows because performances and YOLO.
-      If it happens, buy a lottery ticket and retry.
-  */
+  /*
+     we don't check for overflows in "i".
+     If it happens, buy a lottery ticket and retry.
+   */
 }
 
 uint32_t convert(uint64_t * nn)
@@ -92,11 +90,9 @@ uint32_t convert(uint64_t * nn)
 #define tail       ((head + 1)  % 24)
 #define next_tail  ((head + 2)  % 24)
 
-  /** Check if x has a halfstrip starting from start */
 #define distinguished(x) (((x)[head] & topbigmask)) == 0
 
   /** Check the most significant block */
-
   const uint64_t x = nn[head];
   for (uint32_t w2 = halfstrip_size; w2 < 64-halfstrip_size; w2 += halfstrip_size) {
     if (!(x & (topmask >> w2))) {
@@ -111,14 +107,14 @@ uint32_t convert(uint64_t * nn)
     const uint64_t y = nn[next_head];
 
     if (!(x & bottommask)) {
-      const uint8_t previous = (x >> halfstrip_size) & bottommask;
-      const size_t next = y >> (64 - halfstrip_size);
+      const size_t previous = (x >> halfstrip_size) & bottommask;
+      const uint8_t next = y >> (64 - halfstrip_size);
       if (next <= lookup[previous]) return steps - halfstrip_size - offset[previous];
     }
 
     if (!(y & topmask)) {
-      const uint8_t previous = x & bottommask;
-      const size_t next = (y >> (64 - 2*halfstrip_size)) & bottommask;
+      const size_t previous = x & bottommask;
+      const uint8_t next = (y >> (64 - 2*halfstrip_size)) & bottommask;
       if (next <= lookup[previous]) return steps - offset[previous];
     }
 
@@ -133,7 +129,7 @@ uint32_t convert(uint64_t * nn)
     /**
      * We found no distinguished point.
      */
-    const uint128_t a = x * gg128;
+    const uint128_t a = (uint128_t) x * gg;
     const uint64_t al = (uint64_t) a;
     const uint64_t ah = (a >> 64);
     head = next_head;
@@ -174,8 +170,6 @@ int main()
   getrandom(&_rseed, sizeof(unsigned long int), GRND_NONBLOCK);
   gmp_randseed_ui(_rstate, _rseed);
 
-  mpz_t n, n0;
-  mpz_inits(n, n0, NULL);
 
   for (size_t i = 0; i <= 0xFF; i++) {
     uint32_t j = ffs(i) ? ffs(i) - 1 : 8;
@@ -184,7 +178,10 @@ int main()
   }
 
   uint32_t converted;
-  for (int i=0; i < 1e5; i++) {
+  for (int i=0; i < (int) 15258; i++) {
+    mpz_t n, n0;
+    mpz_inits(n, n0, NULL);
+
     mpz_urandomm(n0, _rstate, p);
     mpz_set(n, n0);
     START_TIMEIT();
@@ -193,22 +190,15 @@ int main()
     mpz_set(n, n0);
 #ifndef NDEBUG
     uint32_t expected = naif_convert(n);
-    printf("%d %d\n", converted, expected);
+    //printf("%d %d\n", converted, expected);
     assert(converted == expected);
 #endif
+    mpz_clears(n, n0, NULL);
   }
+
   printf(TIMEIT_FORMAT "\n", GET_TIMEIT());
 
-
-  /* memset(n->_mp_d, 0, 24*8); */
-  /* memset(n0->_mp_d, 0, 24*8); */
-  /* n0->_mp_d[0] = 13423523; */
-  /* n0->_mp_d[1] = 1; */
-  /* uint64_t v[64] = {0}; */
-  /* unpack(v, n->_mp_d); */
-  /* pack(n0, v); */
-
-  mpz_clears(n, n0, p, g, NULL);
+  mpz_clears(p, g, NULL);
   return 0;
 
 }
