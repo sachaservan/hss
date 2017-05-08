@@ -18,7 +18,7 @@ elgamal_key_t elgamal_keygen()
   return rop;
 }
 
-elgamal_cipher_t elgamal_encrypt(elgamal_key_t k, mpz_t m)
+elgamal_cipher_t elgamal_encrypt(elgamal_key_t k, const mpz_t m)
 {
   mpz_t x;
   elgamal_cipher_t rop;

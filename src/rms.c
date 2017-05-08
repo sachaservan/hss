@@ -29,37 +29,34 @@ void ssl2_merge(mpz_t rop, const ssl2_t s1, const ssl2_t s2)
 {
 
   mpz_sub(rop, s2->x, s1->x);
+  mpz_abs(rop, rop);
 }
 
 
 void ssl1_share(ssl1_t r1, ssl1_t r2, const mpz_t v, const elgamal_key_t key)
 {
-  mpz_t x, zero;
-  mpz_init(x);
+  mpz_t zero;
   mpz_init_set_ui(zero, 0);
-  /* first share is random */
-  mpz_urandomm(x, _rstate, q);
 
-  r1->w = elgamal_encrypt(key, x);
+  r1->w = elgamal_encrypt(key, v);
   for (size_t t = 0; t < 160; t++) {
     if (mpz_tstbit(key.sk, t)) {
-      r1->cw[t] = elgamal_encrypt(key, x);
+      r1->cw[t] = elgamal_encrypt(key, v);
     } else {
       r1->cw[t] = elgamal_encrypt(key, zero);
     }
   }
 
-  mpz_add(x, x, v);
-  r2->w = elgamal_encrypt(key, x);
+  mpz_set(r2->w.c1, r1->w.c1);
+  mpz_set(r2->w.c2, r1->w.c2);
+  //r2->w = elgamal_encrypt(key, v);
   for (size_t t = 0; t < 160; t++) {
     if (mpz_tstbit(key.sk, t)) {
-      r2->cw[t] = elgamal_encrypt(key, x);
+      r2->cw[t] = elgamal_encrypt(key, v);
     } else {
       r2->cw[t] = elgamal_encrypt(key, zero);
     }
   }
-
-  mpz_clear(x);
 }
 
 void ssl1_merge(mpz_t rop, const ssl1_t r1, const ssl1_t r2, const elgamal_key_t key)
@@ -70,9 +67,8 @@ void ssl1_merge(mpz_t rop, const ssl1_t r1, const ssl1_t r2, const elgamal_key_t
   elgamal_decrypt(rop1, key, r1->w);
   elgamal_decrypt(rop2, key, r2->w);
 
-  mpz_invert(rop, rop1, p);
-  mpz_mul(rop, rop, rop2);
-  mpz_mod(rop, rop, p);
+  assert(!mpz_cmp(rop1, rop2));
+  mpz_set(rop, rop1);
 
   mpz_clears(rop1, rop2, NULL);
 }
@@ -88,7 +84,7 @@ uint32_t naif_convert(mpz_t n)
 
 
   for (i = 0; mpz_cmp(n, t) > -1; i++) {
-    mpz_mul_2exp(n, n, 1);
+    mpz_mul_ui(n, n, 2);
     mpz_mod(n, n, p);
   }
 
@@ -96,20 +92,22 @@ uint32_t naif_convert(mpz_t n)
   return i;
 }
 
-void hss_mul(mpz_t rop, const ssl1_t sl1, const ssl2_t sl2)
+elgamal_key_t key;
+
+void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2)
 {
   mpz_t tmp;
   mpz_init(tmp);
 
-  mpz_sub(tmp, q, sl2->cx);
-  mpz_powm(tmp, sl1->w.c1, tmp, p);
+  mpz_powm(tmp, sl1->w.c1, sl2->cx, p);
+  mpz_invert(tmp, tmp, p);
 
-  mpz_powm(rop, sl1->w.c2, sl2->x, p);
-  mpz_mul(rop, rop, tmp);
-  mpz_mod(rop, rop, p);
+  mpz_powm(rop->x, sl1->w.c2, sl2->x, p);
+  mpz_mul(rop->x, rop->x, tmp);
+  mpz_mod(rop->x, rop->x, p);
 
-  const uint32_t converted = naif_convert(rop);
-  mpz_set_ui(rop, converted);
+  const uint32_t converted = naif_convert(rop->x);
+  mpz_set_ui(rop->x, converted);
 
   mpz_clear(tmp);
 }
@@ -123,54 +121,61 @@ int main()
   mpz_t test;
   mpz_init(test);
 
-  /* test elgamal */
-  elgamal_key_t key = elgamal_keygen();
-  //elgamal_cipher_t c = elgamal_encrypt(key, sk);
-  //elgamal_decrypt(test, key, c);
-  //assert(!mpz_cmp(sk, test));
-
-
-  /* end test */
-
   mpz_t x;
   mpz_t y;
+  mpz_inits(x, y, NULL);
 
-  mpz_init_set_ui(x, 0);
-  //mpz_rrandomb(x, _rstate, 1);
-  mpz_init_set_ui(y, 1);
-  //mpz_urandomb(y, _rstate, 1);
+  uint64_t expected;
 
-  /* attempt to create a secret share */
+  /* test elgamal */
+  key = elgamal_keygen();
+  mpz_urandomb(x, _rstate, 128);
+  //elgamal_cipher_t c = elgamal_encrypt(key, x);
+  //elgamal_decrypt(test, key, c);
+  //assert(!mpz_cmp(x, test));
+
+
   ssl1_t r1, r2;
   ssl2_t s1, s2;
-  mpz_t t1, t2;
+  ssl2_t t1, t2;
 
   ssl1_init(r1);
   ssl1_init(r2);
   ssl2_init(s1);
   ssl2_init(s2);
-  mpz_inits(t1, t2, NULL);
+  ssl2_init(t1);
+  ssl2_init(t2);
 
 
   INIT_TIMEIT();
+  for (int i = 0; i <  (int) 1e1; i++) {
 
-  for (int i = 0; i < 1e1; i++) {
+    mpz_rrandomb(x, _rstate, 1);
+    mpz_urandomb(y, _rstate, 1);
+    //mpz_set_ui(x, 0);
+    //mpz_set_ui(y, 1);
 
-    ssl1_share(r1, r2, y, key);
     ssl2_share(s1, s2, x, key.sk);
-
     ssl2_merge(test, s1, s2);
     assert(!mpz_cmp(test, x));
+
+    ssl1_share(r1, r2, y, key);
     ssl1_merge(test, r1, r2, key);
-    assert(!mpz_cmp_ui(test, 2));
+    expected = mpz_cmp_ui(x, 0) && mpz_cmp_ui(y, 0) ? 2 : 1;
+    assert(!mpz_cmp_ui(test, expected));
 
     START_TIMEIT();
     hss_mul(t1, r1, s1);
     END_TIMEIT();
     hss_mul(t2, r2, s2);
-    ssl2_merge(test, s1, s2);
-    //gmp_printf("%Zd %Zd\n", s1, s2);
-    assert(!mpz_cmp_ui(test, 0));
+    //gmp_printf("resulting shares: %Zx %Zx\n", t1->x, t2->x);
+    //gmp_printf("x, y: %Zx %Zx\n", x, y);
+
+    ssl2_merge(test, t2, t1);
+    //gmp_printf("result: %Zx\n", test);
+    expected = (!mpz_cmp_ui(x, 0) || !mpz_cmp_ui(y, 0)) ? 0 : 1;
+    assert(!mpz_cmp_ui(test, expected));
+
   }
 
   printf(TIMEIT_FORMAT "\n", GET_TIMEIT());
@@ -178,8 +183,8 @@ int main()
   ssl2_clear(s2);
   ssl1_clear(r1);
   ssl1_clear(r2);
-
-  mpz_clears(t1, t2, NULL);
+  ssl2_clear(t1);
+  ssl2_clear(t2);
 
   mpz_clears(x, y, NULL);
   mpz_clears(key.sk, key.pk, NULL);

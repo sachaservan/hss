@@ -1,4 +1,5 @@
 #pragma once
+
 #include <linux/random.h>
 #include <sys/syscall.h>
 #include <unistd.h>

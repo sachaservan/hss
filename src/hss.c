@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "hss.h"
 
 /**
@@ -49,8 +51,7 @@ void ssl1_clear(ssl1_t s)
 
 void ssl2_init(ssl2_t s)
 {
-  mpz_init(s->x);
-  mpz_init(s->cx);
+  mpz_inits(s->x, s->cx, NULL);
 }
 
 void ssl2_clear(ssl2_t s)

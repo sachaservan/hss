@@ -16,5 +16,5 @@ typedef struct elgamal_cipher {
 } elgamal_cipher_t;
 
 elgamal_key_t elgamal_keygen();
-elgamal_cipher_t elgamal_encrypt(elgamal_key_t k, mpz_t m);
+elgamal_cipher_t elgamal_encrypt(elgamal_key_t k, const mpz_t m);
 void elgamal_decrypt(mpz_t rop, elgamal_key_t k, elgamal_cipher_t c);
