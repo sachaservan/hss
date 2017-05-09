@@ -16,7 +16,7 @@
 
 
 static inline
-void fbpowm(mpz_t rop, const_fbptable_t T, const uint32_t exp)
+void fbpowm(mpz_t rop, const mpz_t T[4][256], const uint32_t exp)
 {
   const uint8_t *e = (uint8_t *) &exp;
 
@@ -34,19 +34,12 @@ uint32_t __mul_single(mpz_t op1,
                       mpz_t op2,
                       const mpz_t c1,
                       const mpz_t c2,
-                      const_fbptable_t T,
                       const uint32_t x,
                       const mpz_t cx)
 {
 
   mpz_powm(op1, c1, cx, p);
   mpz_invert(op1, op1, p);
-
-  //mpz_t test; mpz_init(test);
-  //mpz_powm_ui(test, c2, x, p);
-  fbpowm(op2, T, x);
-  //if (mpz_cmp(test, op2)) gmp_printf("base: %Zx\nexp: %x\npcomp: %Zx\nreal: %Zd\n", c2, x, op2, test);
-  //mpz_clear(test);
 
   mpz_powm_ui(op2, c2, x, p);
   mpz_mul(op2, op2, op1);
@@ -58,25 +51,22 @@ uint32_t __mul_single(mpz_t op1,
 void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2)
 {
   mpz_t op1, op2;
-  uint32_t converted;
   mpz_inits(op1, op2, NULL);
 
-  converted = __mul_single(op1, op2,
+  rop->x = __mul_single(op1, op2,
                            sl1->w->c1,
                            sl1->w->c2,
-                           sl1->T,
                            sl2->x,
                            sl2->cx);
-  rop->x = converted;
 
   mpz_set_ui(rop->cx, 0);
   for (size_t t = 0; t < 160; t++) {
-    converted = __mul_single(op1, op2,
-                             sl1->cw[t]->c1,
-                             sl1->cw[t]->c2,
-                             sl1->T,
-                             sl2->x,
-                             sl2->cx);
+    const uint32_t converted =
+      __mul_single(op1, op2,
+                   sl1->cw[t]->c1,
+                   sl1->cw[t]->c2,
+                   sl2->x,
+                   sl2->cx);
     mpz_add_ui(rop->cx, rop->cx, converted);
     mpz_mul_2exp(rop->cx, rop->cx, 1);
   }

@@ -150,7 +150,7 @@ int main()
 
   INIT_TIMEIT();
   uint32_t converted;
-  for (int i=0; i < 1e5; i++) {
+  for (int i=0; i < 24e3; i++) {
     mpz_urandomm(n0, _rstate, p);
     mpz_set(n, n0);
     START_TIMEIT();

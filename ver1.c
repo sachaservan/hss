@@ -9,6 +9,7 @@
 #include <linux/random.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
+#include <immintrin.h>
 
 #include <gmp.h>
 
@@ -57,49 +58,44 @@ getrandom(void *buffer, size_t length, unsigned int flags)
 
 INIT_TIMEIT();
 static const uint32_t strip_size = 16;
+#define halfstrip_size (strip_size/2)
 static uint8_t lookup[256];
 static uint8_t offset[256];
 
 uint32_t convert(uint64_t *nn)
 {
-  uint32_t steps = 0;
-  /**
-   * Here we start making a bunch of assumptions.
-   * First, we assume the "w" here is 64 bits, which should be the size
-   * (in bits) of a mp_limb_t.
-   * Secondly, the amount of zeros to check, "d" here is 8.
-   */
-  static const uint32_t window = (32+30) /8;
-  mpz_t a;
-  mpz_init(a);
-#define distinguished(x) (((x)[23] & (~(ULLONG_MAX >> strip_size)))) == 0
-  while (!distinguished(nn)) {
-    /**
-     * Here we try to find a strip of zeros for "w2" bits.
-     * When we find one (up to w2 = 64), then we jump of w = w/2.
-     * I tried to optimize this code:
-     * - by integrating the if statement above with the for loop invariant;
-     * - by making the loop algebraic (i.e. no if-s), given that in the
-     *   generated assembly I read a lot of jumps.
-     * Unfortunately, both approaches actually lead to a slow down in the code.
-     */
+  assert(strip_size == 16);
+  uint32_t steps;
+  static const uint32_t window = 7;
+
+#define distinguished(x) ((x)[23] & ~(ULLONG_MAX >> strip_size)) == 0
+  const __m128i rotmask = _mm_set_epi8(0, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
+  for (steps = 0; !distinguished(nn); steps += window*8) {
     START_TIMEIT();
-    const uint8_t *x = (uint8_t *) &nn[22];
-    uint8_t *y = memrchr(x, '\0', window*2-1);
 
-    if (y  && y[-1] <= lookup[y[+1]]) {
-      return steps + (x + 15 - y)*8 - offset[y[+1]];
+    __m128i x = _mm_lddqu_si128((__m128i *) (nn + 22));
+    __m128i mask = _mm_set_epi8(0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    for (int32_t i = 14; i > 0; --i) {
+      mask = _mm_shuffle_epi8(mask, rotmask);
+        const bool zero = _mm_testz_si128(mask, x);
+        if (zero) {
+          const uint8_t previous = _mm_extract_epi8(x, i-1);
+          const uint8_t next = _mm_extract_epi8(x, i+1);
+          if (previous <= lookup[next]) {
+            END_TIMEIT();
+            return steps + (15-i)*8 - offset[next];
+          }
+        }
     }
-
     END_TIMEIT();
+
     /**
      * We found no distinguished point.
      */
     const uint64_t a = mpn_lshift(nn, nn, 24, window) * gg;
     mpn_add_1(nn, nn, 24, a);
-    steps += window;
   }
-  mpz_clear(a);
   return steps;
 }
 
@@ -109,7 +105,7 @@ uint32_t naif_convert(mpz_t n)
   uint32_t i;
   mpz_t t;
   mpz_init_set_ui(t, 1);
-  mpz_mul_2exp(t, t, 1536-16);
+  mpz_mul_2exp(t, t, 1536-strip_size);
 
 
   for (i = 0; mpz_cmp(n, t) > -1; i++) {
@@ -139,11 +135,11 @@ int main()
     offset[i] = j;
   }
 
-  uint32_t converted;
-  for (uint64_t i=0; i < 1e4; i++) {
-    mpz_t n, n0;
-    mpz_inits(n, n0, NULL);
+  mpz_t n, n0;
+  mpz_inits(n, n0, NULL);
 
+  uint32_t converted;
+  for (uint64_t i=0; i < 1e3; i++) {
     mpz_urandomm(n0, _rstate, p);
     mpz_set(n, n0);
     converted = convert(n->_mp_d);
@@ -153,19 +149,10 @@ int main()
     if (converted != expected) printf("%d %d\n", converted, expected);
     assert(converted == expected);
 #endif
-    mpz_clears(n, n0, NULL);
   }
   printf(TIMEIT_FORMAT "\n", GET_TIMEIT());
 
-
-  /* memset(n->_mp_d, 0, 24*8); */
-  /* memset(n0->_mp_d, 0, 24*8); */
-  /* n0->_mp_d[0] = 13423523; */
-  /* n0->_mp_d[1] = 1; */
-  /* uint64_t v[64] = {0}; */
-  /* unpack(v, n->_mp_d); */
-  /* pack(n0, v); */
-
+  mpz_clears(n, n0, NULL);
   mpz_clears(p, g, NULL);
   return 0;
 

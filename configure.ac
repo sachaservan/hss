@@ -22,6 +22,7 @@ AC_GNU_SOURCE
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h stdint.h stdlib.h string.h unistd.h])
 AC_CHECK_SIZEOF(mp_limb_t, 8, [#include <gmp.h>])
+AC_CHECK_SIZEOF(uint32_t, 4, [#include <stdint.h>])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
@@ -31,8 +32,8 @@ AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MALLOC
 #AC_CHECK_FUNCS([dup2 setlocale strdup])
 
-# Add compiler/linker flags
-CFLAGS+=" -O3 --std=c99 -Wall --pedantic -march=native -DNDEBUG"
+# Clear out compiler/linker flags
+CFLAGS=" -pedantic -Wall "
 
 # Shut up automake
 #AM_SILENT_RULES([yes])
@@ -42,7 +43,8 @@ AC_SUBST([AM_MAKEFLAGS], [--no-print-directory])
 
 AC_ARG_ENABLE(debug,
    AS_HELP_STRING([--enable-debug], [enable debugging, default: no]),
-   CFLAGS+=" -UNDEBUG -O0 -ggdb")
+   CFLAGS+=" -UNDEBUG -O0 -ggdb",
+   CFLAGS+=" -DNDEBUG -O3 -march=native")
 
 AC_OUTPUT([Makefile
            src/Makefile

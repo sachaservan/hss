@@ -37,7 +37,7 @@ void hss_del()
 }
 
 
-void fbprecompute(fbptable_t T, const mpz_t base)
+void fbprecompute(mpz_t T[4][256], const mpz_t base)
 {
   for (size_t j = 0; j < 4; j++) {
     for (size_t i = 0; i <= 0xFF; i++) {
@@ -72,9 +72,6 @@ void ssl1_share(ssl1_t r1, ssl1_t r2, const mpz_t v, const elgamal_key_t key)
   mpz_init_set_ui(zero, 0);
 
   elgamal_encrypt_shares(r1->w, r2->w, key, v);
-  //  s->T = (fbptable_t) calloc(sizeof(fbptable_entry_t), 256 * 4);
-  fbprecompute(r1->T, r1->w->c2);
-  fbprecompute(r2->T, r2->w->c2);
 
   for (size_t t = 0; t < 160; t++) {
     if (mpz_tstbit(key->sk, 159-t)) {
