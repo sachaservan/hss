@@ -34,18 +34,19 @@ void hss_del()
 
 void ssl1_init(ssl1_t s)
 {
-  /* mpz_init(s->w); */
-  /* for (size_t t = 0; t < 160; t++) { */
-  /*   mpz_init(s->cw[t]); */
-  /* } */
+  elgamal_cipher_init(s->w);
+
+  for (size_t t = 0; t < 160; t++) {
+    elgamal_cipher_init(s->cw[t]);
+  }
 }
 
 void ssl1_clear(ssl1_t s)
 {
-  mpz_clears(s->w.c1, s->w.c2, NULL);
+  elgamal_cipher_clear(s->w);
 
   for (size_t t = 0; t < 160; t++) {
-    mpz_clears(s->cw[t].c1, s->cw[t].c2, NULL);
+    elgamal_cipher_clear(s->cw[t]);
   }
 }
 
