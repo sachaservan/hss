@@ -20,9 +20,16 @@ void hss_del();
 /** A level-1 share is the El-Gamal encryption of a secretly-shared value,
  *  plus the encryption of the product of each bit.
  */
+
+//typedef __mpz_struct* fbptable_entry_t;
+//typedef fbptable_entry_t (* fbptable_t)[256];
+typedef const mpz_t (* const_fbptable_t)[256];
+typedef mpz_t (* fbptable_t)[256];
+
 typedef struct ssl1 {
   elgamal_cipher_t w;
   elgamal_cipher_t cw[160];
+  mpz_t T[4][256];
 } ssl1_t[1];
 
 
@@ -35,7 +42,7 @@ void ssl1_open(mpz_t rop, const ssl1_t r1, const ssl1_t r2, const elgamal_key_t 
     This shares have at most 192 bits.
  */
 typedef struct ssl2 {
-  mpz_t x;
+  uint32_t x;
   mpz_t cx;
 } ssl2_t[1];
 

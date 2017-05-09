@@ -1,7 +1,9 @@
 #include "config.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
+#include "entropy.h"
 #include "hss.h"
 
 /**
@@ -34,6 +36,18 @@ void hss_del()
   mpz_clear(p);
 }
 
+
+void fbprecompute(fbptable_t T, const mpz_t base)
+{
+  for (size_t j = 0; j < 4; j++) {
+    for (size_t i = 0; i <= 0xFF; i++) {
+      uint64_t e = (0x01 << 8*j) * i;
+      mpz_init(T[j][i]);
+      mpz_powm_ui(T[j][i], base, e, p);
+    }
+  }
+}
+
 void ssl1_init(ssl1_t s)
 {
   elgamal_cipher_init(s->w);
@@ -58,6 +72,10 @@ void ssl1_share(ssl1_t r1, ssl1_t r2, const mpz_t v, const elgamal_key_t key)
   mpz_init_set_ui(zero, 0);
 
   elgamal_encrypt_shares(r1->w, r2->w, key, v);
+  //  s->T = (fbptable_t) calloc(sizeof(fbptable_entry_t), 256 * 4);
+  fbprecompute(r1->T, r1->w->c2);
+  fbprecompute(r2->T, r2->w->c2);
+
   for (size_t t = 0; t < 160; t++) {
     if (mpz_tstbit(key->sk, 159-t)) {
       elgamal_encrypt_shares(r1->cw[t], r2->cw[t], key, v);
@@ -86,20 +104,27 @@ void ssl1_open(mpz_t rop, const ssl1_t r1, const ssl1_t r2, const elgamal_key_t 
 
 void ssl2_init(ssl2_t s)
 {
-  mpz_inits(s->x, s->cx, NULL);
+  s->x = 0;
+  mpz_inits(s->cx, NULL);
 }
 
 void ssl2_clear(ssl2_t s)
 {
-  mpz_clear(s->x);
   mpz_clear(s->cx);
 }
 
 
 void ssl2_share(ssl2_t s1, ssl2_t s2, const mpz_t v, const mpz_t sk)
 {
-  mpz_urandomb(s1->x, _rstate, 192);
-  mpz_add(s2->x, v, s1->x);
+  /* sampling one byte here is already sufficient.
+   * However, the purpose of this function is testing,
+   * so here we go sampling over the whole space */
+  getrandom(&s1->x, 3, GRND_NONBLOCK);
+  //mpz_urandomb(s1->x, _rstate, 192);
+  //mpz_add(s2->x, v, s1->x);
+
+  const uint32_t _v = (uint32_t) mpz_get_ui(v);
+  s2->x = s1->x + _v;
 
   mpz_urandomb(s1->cx, _rstate, 192);
   mpz_mul(s2->cx, sk, v);
@@ -109,6 +134,8 @@ void ssl2_share(ssl2_t s1, ssl2_t s2, const mpz_t v, const mpz_t sk)
 
 void ssl2_open(mpz_t rop, const ssl2_t s1, const ssl2_t s2)
 {
-  mpz_sub(rop, s2->x, s1->x);
-  mpz_abs(rop, rop);
+  if (s1->x > s2->x) mpz_set_ui(rop, s1->x - s2->x);
+  else               mpz_set_ui(rop, s2->x - s1->x);
+  //mpz_sub(rop, s2->x, s1->x);
+  //mpz_abs(rop, rop);
 }
