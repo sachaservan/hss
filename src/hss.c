@@ -36,18 +36,6 @@ void hss_del()
   mpz_clear(p);
 }
 
-
-void fbprecompute(mpz_t T[4][256], const mpz_t base)
-{
-  for (size_t j = 0; j < 4; j++) {
-    for (size_t i = 0; i <= 0xFF; i++) {
-      uint64_t e = (0x01 << 8*j) * i;
-      mpz_init(T[j][i]);
-      mpz_powm_ui(T[j][i], base, e, p);
-    }
-  }
-}
-
 void ssl1_init(ssl1_t s)
 {
   elgamal_cipher_init(s->w);

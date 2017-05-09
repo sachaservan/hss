@@ -32,6 +32,7 @@ void elgamal_encrypt(elgamal_cipher_t rop, const elgamal_key_t k, const mpz_t m)
 
   mpz_set_ui(rop->c1, 2);
   mpz_powm(rop->c1, rop->c1, x, p);
+  mpz_invert(rop->c1, rop->c1, p);
 
   mpz_set(rop->c2, k->pk);
   mpz_powm(rop->c2, rop->c2, x, p);
@@ -47,7 +48,6 @@ void elgamal_encrypt(elgamal_cipher_t rop, const elgamal_key_t k, const mpz_t m)
 void elgamal_decrypt(mpz_t rop, const elgamal_key_t k, const elgamal_cipher_t c)
 {
   mpz_powm(rop, c->c1, k->sk, p);
-  mpz_invert(rop, rop, p);
   mpz_mul(rop, rop, c->c2);
   mpz_mod(rop, rop, p);
 }

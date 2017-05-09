@@ -39,8 +39,6 @@ uint32_t __mul_single(mpz_t op1,
 {
 
   mpz_powm(op1, c1, cx, p);
-  mpz_invert(op1, op1, p);
-
   mpz_powm_ui(op2, c2, x, p);
   mpz_mul(op2, op2, op1);
   mpz_mod(op2, op2, p);
@@ -102,7 +100,7 @@ int main()
   ssl2_init(t2);
 
   INIT_TIMEIT();
-  for (int i = 0; i <  (int) 1e1; i++) {
+  for (int i = 0; i <  (int) 1e2; i++) {
 
     mpz_urandomb(y, _rstate, 1);
     mpz_urandomb(x, _rstate, 1);
