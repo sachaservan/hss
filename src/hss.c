@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <assert.h>
+
 #include "hss.h"
 
 /**
@@ -50,6 +52,38 @@ void ssl1_clear(ssl1_t s)
   }
 }
 
+void ssl1_share(ssl1_t r1, ssl1_t r2, const mpz_t v, const elgamal_key_t key)
+{
+  mpz_t zero;
+  mpz_init_set_ui(zero, 0);
+
+  elgamal_encrypt_shares(r1->w, r2->w, key, v);
+  for (size_t t = 0; t < 160; t++) {
+    if (mpz_tstbit(key->sk, 159-t)) {
+      elgamal_encrypt_shares(r1->cw[t], r2->cw[t], key, v);
+    } else {
+      elgamal_encrypt_shares(r1->cw[t], r2->cw[t], key, zero);
+    }
+  }
+
+  mpz_clear(zero);
+}
+
+void ssl1_open(mpz_t rop, const ssl1_t r1, const ssl1_t r2, const elgamal_key_t key)
+{
+  mpz_t rop1, rop2;
+  mpz_inits(rop1, rop2, NULL);
+
+  elgamal_decrypt(rop1, key, r1->w);
+  elgamal_decrypt(rop2, key, r2->w);
+
+  assert(!mpz_cmp(rop1, rop2));
+  mpz_set(rop, rop1);
+
+  mpz_clears(rop1, rop2, NULL);
+}
+
+
 void ssl2_init(ssl2_t s)
 {
   mpz_inits(s->x, s->cx, NULL);
@@ -59,4 +93,22 @@ void ssl2_clear(ssl2_t s)
 {
   mpz_clear(s->x);
   mpz_clear(s->cx);
+}
+
+
+void ssl2_share(ssl2_t s1, ssl2_t s2, const mpz_t v, const mpz_t sk)
+{
+  mpz_urandomb(s1->x, _rstate, 192);
+  mpz_add(s2->x, v, s1->x);
+
+  mpz_urandomb(s1->cx, _rstate, 192);
+  mpz_mul(s2->cx, sk, v);
+  mpz_add(s2->cx, s2->cx, s1->cx);
+}
+
+
+void ssl2_open(mpz_t rop, const ssl2_t s1, const ssl2_t s2)
+{
+  mpz_sub(rop, s2->x, s1->x);
+  mpz_abs(rop, rop);
 }

@@ -70,7 +70,7 @@ void naif_fbpowm(mpz_t rop, const pbase_t pb, uint32_t exp)
 }
 
 
-void precompute(pbase_t *pb)
+void fbprecompute(pbase_t *pb)
 {
   for (size_t j = 0; j < 4; j++) {
     for (size_t i = 0; i <= 0xFF; i++) {
@@ -82,14 +82,15 @@ void precompute(pbase_t *pb)
   }
 }
 
+static inline
 void fbpowm(mpz_t rop, const pbase_t * const pb, uint32_t exp)
 {
-  uint8_t *e = (uint8_t *) &exp;
+  const uint8_t *e = (uint8_t *) &exp;
 
-  mpz_set_ui(rop, 1);
-  mpz_mul(rop, rop, pb->T[0][e[0]]);
-  mpz_mul(rop, rop, pb->T[1][e[1]]);
+  mpz_mul(rop, pb->T[0][e[0]], pb->T[1][e[1]]);
+  mpz_mod(rop, rop, p);
   mpz_mul(rop, rop, pb->T[2][e[2]]);
+  mpz_mod(rop, rop, p);
   mpz_mul(rop, rop, pb->T[3][e[3]]);
   mpz_mod(rop, rop, p);
 
@@ -115,19 +116,19 @@ int main()
   pbase_t pb;
   mpz_init_set_ui(pb.base, 2);
   //  mpz_urandomm(pb.base, _rstate, p);
-  precompute(&pb);
+  fbprecompute(&pb);
 
   mpz_t expected;
   mpz_init(expected);
 
   INIT_TIMEIT();
-  for (int i = 0; i < (int) 1e5; i++) {
+  for (int i = 0; i < (int) 1e4; i++) {
     getrandom(&exp, sizeof(exp), GRND_NONBLOCK);
     START_TIMEIT();
     fbpowm(x, &pb, exp);
     END_TIMEIT();
-    naif_fbpowm(expected, pb, exp);
-    assert(!mpz_cmp(expected, x));
+    //naif_fbpowm(expected, pb, exp);
+    //assert(!mpz_cmp(expected, x));
   }
 
   printf(TIMEIT_FORMAT "\n", GET_TIMEIT());

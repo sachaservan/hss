@@ -13,57 +13,6 @@
 #include "hss.h"
 #include "timeit.h"
 
-/** this function is only for testing purposes. */
-void ssl2_share(ssl2_t s1, ssl2_t s2, const mpz_t v, const mpz_t sk)
-{
-  mpz_urandomb(s1->x, _rstate, 192);
-  mpz_add(s2->x, v, s1->x);
-
-  mpz_urandomb(s1->cx, _rstate, 192);
-  mpz_mul(s2->cx, sk, v);
-  mpz_add(s2->cx, s2->cx, s1->cx);
-}
-
-
-void ssl2_merge(mpz_t rop, const ssl2_t s1, const ssl2_t s2)
-{
-  mpz_sub(rop, s2->x, s1->x);
-  mpz_abs(rop, rop);
-}
-
-
-void ssl1_share(ssl1_t r1, ssl1_t r2, const mpz_t v, const elgamal_key_t key)
-{
-  mpz_t zero;
-  mpz_init_set_ui(zero, 0);
-
-  elgamal_encrypt_shares(r1->w, r2->w, key, v);
-  for (size_t t = 0; t < 160; t++) {
-    if (mpz_tstbit(key->sk, t)) {
-      elgamal_encrypt_shares(r1->cw[t], r2->cw[t], key, v);
-    } else {
-      elgamal_encrypt_shares(r1->cw[t], r2->cw[t], key, zero);
-    }
-  }
-
-  mpz_clear(zero);
-}
-
-void ssl1_merge(mpz_t rop, const ssl1_t r1, const ssl1_t r2, const elgamal_key_t key)
-{
-  mpz_t rop1, rop2;
-  mpz_inits(rop1, rop2, NULL);
-
-  elgamal_decrypt(rop1, key, r1->w);
-  elgamal_decrypt(rop2, key, r2->w);
-
-  assert(!mpz_cmp(rop1, rop2));
-  mpz_set(rop, rop1);
-
-  mpz_clears(rop1, rop2, NULL);
-}
-
-
 #define strip_size 16
 uint32_t naif_convert(mpz_t n)
 {
@@ -111,7 +60,7 @@ void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2)
   mpz_set_ui(rop->x, converted);
 
   mpz_set_ui(rop->cx, 0);
-  for (ssize_t t = 159; t >= 0; t--) {
+  for (size_t t = 0; t < 160; t++) {
     converted = __mul_single(op1, op2,
                              sl1->cw[t]->c1, sl1->cw[t]->c2, sl2->x, sl2->cx);
     mpz_add_ui(rop->cx, rop->cx, converted);
@@ -124,7 +73,6 @@ void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2)
 
 int main()
 {
-  /* set up entropy, prime modulus etc. */
   mpz_entropy_init();
   hss_init();
 
@@ -158,11 +106,11 @@ int main()
     /* mpz_set_ui(y, 1); */
 
     ssl2_share(s1, s2, x, key->sk);
-    ssl2_merge(test, s1, s2);
+    ssl2_open(test, s1, s2);
     assert(!mpz_cmp(test, x));
 
     ssl1_share(r1, r2, y, key);
-    ssl1_merge(test, r1, r2, key);
+    ssl1_open(test, r1, r2, key);
     assert(!mpz_cmp_ui(test, mpz_cmp_ui(y, 0) ? 2 : 1));
 
     START_TIMEIT();
@@ -175,7 +123,7 @@ int main()
 #endif
 
     mpz_mul(xy, x, y);
-    ssl2_merge(test, t2, t1);
+    ssl2_open(test, t2, t1);
     assert(!mpz_cmp(test, xy));
 
     mpz_sub(test, t2->cx, t1->cx);
