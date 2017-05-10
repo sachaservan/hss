@@ -14,6 +14,28 @@
 #include "hss.h"
 #include "timeit.h"
 
+static inline
+void modp(mpz_t rop)
+{
+  const int limbs = rop->_mp_size - 24;
+
+  if (limbs < 0) return;
+  else if (limbs == 0 && mpz_cmp(rop, p) < 0) return;
+  else if (limbs == 0 && mpz_cmp(rop, p) >= 0) {
+    mpz_sub(rop, rop, p);
+    return;
+  }
+
+  mp_limb_t a[limbs + 10];
+  uint64_t gamma = gg;
+  mpn_mul(a, rop->_mp_d + 24, limbs, &gamma, 1);
+  for (int i = 24; i < rop->_mp_size; i++) rop->_mp_d[i] = 0;
+  mpn_add(rop->_mp_d, rop->_mp_d, 24, a, limbs+1);
+  mpz_mul_2exp(rop, rop, 1);
+  mpz_div_2exp(rop, rop, 1);
+
+  modp(rop);
+}
 
 static inline
 void fbpowm(mpz_t rop, const mpz_t T[4][256], const uint32_t exp)
@@ -45,16 +67,16 @@ uint32_t __mul_single(mpz_t op1,
   /* second block */
   mpz_powm_ui(op2, c1e64, cx->_mp_d[1], p);
   mpz_mul(op1, op2, op1);
-  mpz_mod(op1, op1, p);
+  modp(op1);
   /* third block */
   mpz_powm_ui(op2, c1e128, cx->_mp_d[2], p);
   mpz_mul(op1, op2, op1);
-  mpz_mod(op1, op1, p);
+  modp(op1);
 
   //mpz_powm(op1, c1, cx, p);
   mpz_powm_ui(op2, c2, x, p);
   mpz_mul(op2, op2, op1);
-  mpz_mod(op2, op2, p);
+  modp(op2);
   const uint32_t converted = convert(op2->_mp_d);
   return converted;
 }
@@ -105,6 +127,17 @@ int main()
   elgamal_key_t key;
   ELGAMAL_KEY(init, key);
   elgamal_keygen(key);
+
+
+  mpz_t expected_mod, base;
+  mpz_inits(expected_mod, base, NULL);
+  mpz_urandomm(base, _rstate, p);
+  mpz_powm_ui(expected_mod, base, 2, p);
+  mpz_pow_ui(test, base, 2);
+  modp(test);
+  // gmp_printf("%Zx\n%Zx\n", test, expected_mod);
+  assert(!mpz_cmp(test, expected_mod));
+  mpz_clear(expected_mod);
 
   ssl1_t r1, r2;
   ssl2_t s1, s2;
