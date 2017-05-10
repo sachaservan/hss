@@ -7,21 +7,14 @@
 #include "hss.h"
 
 
-void elgamal_key_init(elgamal_key_t rop)
+void elgamal_keygen(elgamal_key_t rop)
 {
-  mpz_init(rop->sk);
-  mpz_init_set_ui(rop->pk, 2);
+  mpz_set_ui(rop->pk, 2);
 
   //  mpz_urandomm(rop->sk, _rstate, q);
   mpz_urandomb(rop->sk, _rstate, 160);
   mpz_powm(rop->pk, rop->pk, rop->sk, p);
 }
-
-void elgamal_key_clear(elgamal_key_t key)
-{
-  mpz_clears(key->sk, key->pk, NULL);
-}
-
 
 void elgamal_encrypt(elgamal_cipher_t rop, const elgamal_key_t k, const mpz_t m)
 {
@@ -33,6 +26,14 @@ void elgamal_encrypt(elgamal_cipher_t rop, const elgamal_key_t k, const mpz_t m)
   mpz_set_ui(rop->c1, 2);
   mpz_powm(rop->c1, rop->c1, x, p);
   mpz_invert(rop->c1, rop->c1, p);
+
+  /* cached intermediate values */
+  mpz_t e;
+  mpz_init_set_ui(e, 1);
+  mpz_mul_2exp(e, e, 64);
+  mpz_powm(rop->c1e64, rop->c1, e, p);
+  mpz_powm(rop->c1e128, rop->c1e64, e, p);
+  mpz_clear(e);
 
   mpz_set(rop->c2, k->pk);
   mpz_powm(rop->c2, rop->c2, x, p);
@@ -52,17 +53,11 @@ void elgamal_decrypt(mpz_t rop, const elgamal_key_t k, const elgamal_cipher_t c)
   mpz_mod(rop, rop, p);
 }
 
-void elgamal_cipher_init(elgamal_cipher_t rop)
-{
-  mpz_inits(rop->c1, rop->c2, NULL);
-}
 void elgamal_cipher_set(elgamal_cipher_t rop, const elgamal_cipher_t op1)
 {
   mpz_set(rop->c1, op1->c1);
   mpz_set(rop->c2, op1->c2);
-}
+  mpz_set(rop->c1e64, op1->c1e64);
+  mpz_set(rop->c1e128, op1->c1e128);
 
-void elgamal_cipher_clear(elgamal_cipher_t op)
-{
-  mpz_clears(op->c1, op->c2, NULL);
 }

@@ -33,12 +33,25 @@ static inline
 uint32_t __mul_single(mpz_t op1,
                       mpz_t op2,
                       const mpz_t c1,
+                      const mpz_t c1e64,
+                      const mpz_t c1e128,
                       const mpz_t c2,
                       const uint32_t x,
                       const mpz_t cx)
 {
 
-  mpz_powm(op1, c1, cx, p);
+  /* first block */
+  mpz_powm_ui(op1, c1, cx->_mp_d[0], p);
+  /* second block */
+  mpz_powm_ui(op2, c1e64, cx->_mp_d[1], p);
+  mpz_mul(op1, op2, op1);
+  mpz_mod(op1, op1, p);
+  /* third block */
+  mpz_powm_ui(op2, c1e128, cx->_mp_d[2], p);
+  mpz_mul(op1, op2, op1);
+  mpz_mod(op1, op1, p);
+
+  //mpz_powm(op1, c1, cx, p);
   mpz_powm_ui(op2, c2, x, p);
   mpz_mul(op2, op2, op1);
   mpz_mod(op2, op2, p);
@@ -52,16 +65,20 @@ void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2)
   mpz_inits(op1, op2, NULL);
 
   rop->x = __mul_single(op1, op2,
-                           sl1->w->c1,
-                           sl1->w->c2,
-                           sl2->x,
-                           sl2->cx);
+                        sl1->w->c1,
+                        sl1->w->c1e64,
+                        sl1->w->c1e128,
+                        sl1->w->c2,
+                        sl2->x,
+                        sl2->cx);
 
   mpz_set_ui(rop->cx, 0);
   for (size_t t = 0; t < 160; t++) {
     const uint32_t converted =
       __mul_single(op1, op2,
                    sl1->cw[t]->c1,
+                   sl1->cw[t]->c1e64,
+                   sl1->cw[t]->c1e128,
                    sl1->cw[t]->c2,
                    sl2->x,
                    sl2->cx);
@@ -86,7 +103,8 @@ int main()
   mpz_inits(x, y, xy, NULL);
 
   elgamal_key_t key;
-  elgamal_key_init(key);
+  ELGAMAL_KEY(init, key);
+  elgamal_keygen(key);
 
   ssl1_t r1, r2;
   ssl2_t s1, s2;
@@ -100,7 +118,7 @@ int main()
   ssl2_init(t2);
 
   INIT_TIMEIT();
-  for (int i = 0; i <  (int) 1e2; i++) {
+  for (int i = 0; i <  (int) 1e1; i++) {
 
     mpz_urandomb(y, _rstate, 1);
     mpz_urandomb(x, _rstate, 1);
@@ -143,7 +161,7 @@ int main()
   ssl2_clear(t2);
 
   mpz_clears(x, y, NULL);
-  elgamal_key_clear(key);
+  ELGAMAL_KEY(clear, key);
   hss_del();
   return 0;
 }

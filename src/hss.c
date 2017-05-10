@@ -38,19 +38,19 @@ void hss_del()
 
 void ssl1_init(ssl1_t s)
 {
-  elgamal_cipher_init(s->w);
+  ELGAMAL_CIPHER(init, s->w);
 
   for (size_t t = 0; t < 160; t++) {
-    elgamal_cipher_init(s->cw[t]);
+    ELGAMAL_CIPHER(init, s->cw[t]);
   }
 }
 
 void ssl1_clear(ssl1_t s)
 {
-  elgamal_cipher_clear(s->w);
+  ELGAMAL_CIPHER(clear, s->w);
 
   for (size_t t = 0; t < 160; t++) {
-    elgamal_cipher_clear(s->cw[t]);
+    ELGAMAL_CIPHER(clear, s->cw[t]);
   }
 }
 
