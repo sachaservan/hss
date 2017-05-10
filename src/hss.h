@@ -11,7 +11,7 @@
  */
 extern const char* p_str;
 extern mpz_t p, q;
-extern uint32_t gg;
+extern const uint64_t gg;
 
 void hss_init();
 void hss_del();

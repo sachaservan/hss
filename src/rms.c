@@ -15,7 +15,7 @@
 #include "timeit.h"
 
 static inline
-void modp(mpz_t rop)
+void remp(mpz_t rop)
 {
   const int limbs = rop->_mp_size - 24;
 
@@ -26,15 +26,18 @@ void modp(mpz_t rop)
     return;
   }
 
-  mp_limb_t a[limbs + 10];
-  uint64_t gamma = gg;
-  mpn_mul(a, rop->_mp_d + 24, limbs, &gamma, 1);
+  /* XXX. this can be replaced to mpn_addmul1 */
+  mp_limb_t a[limbs + 1];
+  mpn_mul(a, rop->_mp_d + 24, limbs, &gg, 1);
   for (int i = 24; i < rop->_mp_size; i++) rop->_mp_d[i] = 0;
   mpn_add(rop->_mp_d, rop->_mp_d, 24, a, limbs+1);
-  mpz_mul_2exp(rop, rop, 1);
-  mpz_div_2exp(rop, rop, 1);
 
-  modp(rop);
+  /* XXX. these two lines are useless and have the sole purpose to restore
+   * the mpz_t to a consistent type. */
+  mpz_add_ui(rop, rop, 1);
+  mpz_sub_ui(rop, rop, 1);
+
+  remp(rop);
 }
 
 static inline
@@ -52,62 +55,45 @@ void fbpowm(mpz_t rop, const mpz_t T[4][256], const uint32_t exp)
 
 
 static inline
-uint32_t __mul_single(mpz_t op1,
+uint32_t mul_single(mpz_t op1,
                       mpz_t op2,
-                      const mpz_t c1,
-                      const mpz_t c1e64,
-                      const mpz_t c1e128,
-                      const mpz_t c2,
+                      const elgamal_cipher_t c,
                       const uint32_t x,
                       const mpz_t cx)
 {
-
-  /* first block */
-  mpz_powm_ui(op1, c1, cx->_mp_d[0], p);
-  /* second block */
-  mpz_powm_ui(op2, c1e64, cx->_mp_d[1], p);
-  mpz_mul(op1, op2, op1);
-  modp(op1);
-  /* third block */
-  mpz_powm_ui(op2, c1e128, cx->_mp_d[2], p);
-  mpz_mul(op1, op2, op1);
-  modp(op1);
-
   //mpz_powm(op1, c1, cx, p);
-  mpz_powm_ui(op2, c2, x, p);
+  /* first block */
+  mpz_powm_ui(op1, c->c1, cx->_mp_d[0], p);
+  /* second block */
+  mpz_powm_ui(op2, c->c1e64, cx->_mp_d[1], p);
+  mpz_mul(op1, op2, op1);
+  remp(op1);
+  /* third block */
+  mpz_powm_ui(op2, c->c1e128, cx->_mp_d[2], p);
+  mpz_mul(op1, op2, op1);
+  remp(op1);
+
+  mpz_powm_ui(op2, c->c2, x, p);
   mpz_mul(op2, op2, op1);
-  modp(op2);
-  const uint32_t converted = convert(op2->_mp_d);
-  return converted;
+  remp(op2);
+
+  return convert(op2->_mp_d);
 }
 
 void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2)
 {
+  uint32_t converted;
   mpz_t op1, op2;
   mpz_inits(op1, op2, NULL);
 
-  rop->x = __mul_single(op1, op2,
-                        sl1->w->c1,
-                        sl1->w->c1e64,
-                        sl1->w->c1e128,
-                        sl1->w->c2,
-                        sl2->x,
-                        sl2->cx);
+  rop->x = mul_single(op1, op2, sl1->w, sl2->x, sl2->cx);
 
   mpz_set_ui(rop->cx, 0);
   for (size_t t = 0; t < 160; t++) {
-    const uint32_t converted =
-      __mul_single(op1, op2,
-                   sl1->cw[t]->c1,
-                   sl1->cw[t]->c1e64,
-                   sl1->cw[t]->c1e128,
-                   sl1->cw[t]->c2,
-                   sl2->x,
-                   sl2->cx);
-    mpz_add_ui(rop->cx, rop->cx, converted);
     mpz_mul_2exp(rop->cx, rop->cx, 1);
+    converted = mul_single(op1, op2, sl1->cw[t], sl2->x, sl2->cx);
+    mpz_add_ui(rop->cx, rop->cx, converted);
   }
-  mpz_div_2exp(rop->cx, rop->cx, 1);
 
   mpz_clears(op1, op2, NULL);
 }
@@ -134,7 +120,7 @@ int main()
   mpz_urandomm(base, _rstate, p);
   mpz_powm_ui(expected_mod, base, 2, p);
   mpz_pow_ui(test, base, 2);
-  modp(test);
+  remp(test);
   // gmp_printf("%Zx\n%Zx\n", test, expected_mod);
   assert(!mpz_cmp(test, expected_mod));
   mpz_clear(expected_mod);

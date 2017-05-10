@@ -19,7 +19,7 @@ const char* p_str =
   "505CAF";
 
 mpz_t p, q;
-uint32_t gg = 11510609;
+const uint64_t gg = 11510609;
 
 void hss_init()
 {
