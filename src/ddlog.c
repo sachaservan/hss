@@ -5,7 +5,10 @@
 #include <gmp.h>
 
 #include "ddlog.h"
+#include "group.h"
 #include "hss.h"
+
+typedef __uint128_t uint128_t;
 
 uint8_t lookup[256];
 uint8_t offset[256];
@@ -29,7 +32,6 @@ uint32_t convert(uint64_t * nn)
   static const uint64_t topmask = ~(ULLONG_MAX >> halfstrip_size);
   static const uint64_t topbigmask = ~(ULLONG_MAX >> strip_size);
   static const uint64_t bottommask = (0x01  << halfstrip_size) -1;
-
   uint32_t w;
   uint32_t steps;
   size_t head = 23;
@@ -86,7 +88,6 @@ uint32_t convert(uint64_t * nn)
   }
   return steps;
 }
-
 
 uint32_t naif_convert(mpz_t n)
 {

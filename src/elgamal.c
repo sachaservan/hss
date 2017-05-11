@@ -4,6 +4,7 @@
 
 #include "elgamal.h"
 #include "entropy.h"
+#include "group.h"
 #include "hss.h"
 
 

@@ -10,14 +10,15 @@
 #include "ddlog.h"
 #include "elgamal.h"
 #include "entropy.h"
-#include "rms.h"
+#include "group.h"
 #include "hss.h"
+#include "rms.h"
 #include "timeit.h"
 
 static inline
 void remp(mpz_t rop)
 {
-  const int limbs = rop->_mp_size - 24;
+  int limbs = rop->_mp_size - 24;
 
   if (limbs < 0) return;
   else if (limbs == 0 && mpz_cmp(rop, p) < 0) return;
@@ -100,8 +101,8 @@ void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2)
 
 int main()
 {
+  group_init();
   mpz_entropy_init();
-  hss_init();
   dlog_precompute();
 
   mpz_t test;
@@ -136,8 +137,8 @@ int main()
   ssl2_init(t1);
   ssl2_init(t2);
 
-  INIT_TIMEIT();
-  for (int i = 0; i <  (int) 1e1; i++) {
+  INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
+  for (int i = 0; i <  (int) 1e2; i++) {
 
     mpz_urandomb(y, _rstate, 1);
     mpz_urandomb(x, _rstate, 1);
@@ -181,6 +182,6 @@ int main()
 
   mpz_clears(x, y, NULL);
   ELGAMAL_KEY(clear, key);
-  hss_del();
+  group_clear();
   return 0;
 }

@@ -4,37 +4,8 @@
 #include <stdlib.h>
 
 #include "entropy.h"
+#include "elgamal.h"
 #include "hss.h"
-
-/**
- * p is our prime modulus, and is 2^n - g
- * where g is referred to as "gamma" (built-in function in C, so transliterated)
- */
-const char* p_str =
-  "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-  "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-  "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-  "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-  "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-  "505CAF";
-
-mpz_t p, q;
-const uint64_t gg = 11510609;
-
-void hss_init()
-{
-  mpz_init_set_str(p, p_str, 0);
-
-  mpz_init_set(q, p);
-  mpz_sub_ui(q, q, 1);
-  mpz_divexact_ui(q, q, 2);
-}
-
-
-void hss_del()
-{
-  mpz_clear(p);
-}
 
 void ssl1_init(ssl1_t s)
 {
