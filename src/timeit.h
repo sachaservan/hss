@@ -17,6 +17,3 @@
   __sdiff + __udiff * 1e-9
 
 #define TIMEIT_FORMAT "%lf"
-
-
-#define INIT_CLOCK

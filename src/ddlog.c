@@ -69,9 +69,9 @@ uint32_t convert(uint64_t * nn)
 
     for (uint32_t w2 = halfstrip_size; w2 < 64-halfstrip_size; w2 += halfstrip_size) {
       if (!(y & (topmask >> w2))) {
-        for (w = w2-1; !(y & (topmask >> w)); w--);
-        ++w;
-        if (!(y & (topbigmask >> w)))  return steps + w;
+        const size_t previous = (y >> (64 - halfstrip_size - w2 + halfstrip_size)) & bottommask;
+        const uint8_t next =    (y >> (64 - halfstrip_size - w2 - halfstrip_size)) & bottommask;
+        if (next <= lookup[previous]) return steps + w2 - offset[previous];
       }
     }
 
@@ -88,6 +88,7 @@ uint32_t convert(uint64_t * nn)
   }
   return steps;
 }
+
 
 uint32_t naif_convert(mpz_t n)
 {
