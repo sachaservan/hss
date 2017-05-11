@@ -6,8 +6,8 @@
 #define strip_size 16
 #define halfstrip_size ((strip_size)/2)
 
-extern uint8_t lookup[256];
-extern uint8_t offset[256];
+extern uint32_t lookup[256];
+extern uint32_t offset[256];
 
 
 uint32_t convert(uint64_t *nn);

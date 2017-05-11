@@ -10,8 +10,8 @@
 
 typedef __uint128_t uint128_t;
 
-uint8_t lookup[256];
-uint8_t offset[256];
+uint32_t lookup[256];
+uint32_t offset[256];
 
 static inline
 void add_1(uint64_t *b, const size_t start, const size_t len, uint64_t a)
@@ -45,7 +45,7 @@ uint32_t __attribute__((optimize("unroll-loops"))) convert(uint64_t * nn)
   for (uint32_t w2 = halfstrip_size; w2 < 64-halfstrip_size; w2 += halfstrip_size) {
     if (!(x & (topmask >> w2))) {
       const size_t previous = (x >> (64 - halfstrip_size - w2 + halfstrip_size)) & bottommask;
-      const uint8_t next =    (x >> (64 - halfstrip_size - w2 - halfstrip_size)) & bottommask;
+      const uint32_t next =    (x >> (64 - halfstrip_size - w2 - halfstrip_size)) & bottommask;
       if (next <= lookup[previous]) return w2 - offset[previous];
     }
   }
@@ -56,20 +56,20 @@ uint32_t __attribute__((optimize("unroll-loops"))) convert(uint64_t * nn)
 
     if (!(x & bottommask)) {
       const size_t previous = (x >> halfstrip_size) & bottommask;
-      const uint8_t next = y >> (64 - halfstrip_size);
+      const uint32_t next = y >> (64 - halfstrip_size);
       if (next <= lookup[previous]) return steps - halfstrip_size - offset[previous];
     }
 
     if (!(y & topmask)) {
       const size_t previous = x & bottommask;
-      const uint8_t next = (y >> (64 - 2*halfstrip_size)) & bottommask;
+      const uint32_t next = (y >> (64 - 2*halfstrip_size)) & bottommask;
       if (next <= lookup[previous]) return steps - offset[previous];
     }
 
     for (uint32_t w2 = halfstrip_size; w2 < 64-halfstrip_size; w2 += halfstrip_size) {
       if (!(y & (topmask >> w2))) {
         const size_t previous = (y >> (64 - halfstrip_size - w2 + halfstrip_size)) & bottommask;
-        const uint8_t next =    (y >> (64 - halfstrip_size - w2 - halfstrip_size)) & bottommask;
+        const uint32_t next =    (y >> (64 - halfstrip_size - w2 - halfstrip_size)) & bottommask;
         if (next <= lookup[previous]) return steps + w2 - offset[previous];
       }
     }

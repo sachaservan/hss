@@ -26,3 +26,19 @@ void group_clear()
 {
   mpz_clears(p, q, NULL);
 }
+
+void powmp_ui(mpz_t x, const mpz_t base, uint64_t exp)
+{
+  mpz_t y;
+  mpz_init_set_ui(y, 1);
+  mpz_set(x, base);
+
+  while (exp > 1) {
+    if (exp &  1) mpz_mul_modp(y, x, y);
+    mpz_mul_modp(x, x, x);
+    exp >>= 1;
+  }
+
+  mpz_mul_modp(x, x, y);
+  mpz_clear(y);
+}
