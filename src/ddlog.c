@@ -27,12 +27,11 @@ void add_1(uint64_t *b, const size_t start, const size_t len, uint64_t a)
    */
 }
 
-uint32_t convert(uint64_t * nn)
+uint32_t __attribute__((optimize("unroll-loops"))) convert(uint64_t * nn)
 {
   static const uint64_t topmask = ~(ULLONG_MAX >> halfstrip_size);
   static const uint64_t topbigmask = ~(ULLONG_MAX >> strip_size);
   static const uint64_t bottommask = (0x01  << halfstrip_size) -1;
-  uint32_t w;
   uint32_t steps;
   size_t head = 23;
 #define next_head  ((head + 23) % 24)
@@ -45,9 +44,9 @@ uint32_t convert(uint64_t * nn)
   const uint64_t x = nn[head];
   for (uint32_t w2 = halfstrip_size; w2 < 64-halfstrip_size; w2 += halfstrip_size) {
     if (!(x & (topmask >> w2))) {
-      for (w = w2-1; !(x & (topmask >> w)); w--);
-      ++w;
-      if (!(x & (topbigmask >> w))) return w;
+      const size_t previous = (x >> (64 - halfstrip_size - w2 + halfstrip_size)) & bottommask;
+      const uint8_t next =    (x >> (64 - halfstrip_size - w2 - halfstrip_size)) & bottommask;
+      if (next <= lookup[previous]) return w2 - offset[previous];
     }
   }
 
