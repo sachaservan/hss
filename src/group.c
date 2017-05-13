@@ -15,8 +15,8 @@ void group_init()
 {
   mpz_init_set_str(p, p_str, 0);
 
-  mpz_init_set(q, p);
-  mpz_sub_ui(q, q, 1);
+  mpz_init(q);
+  mpz_sub_ui(q, p, 1);
   mpz_divexact_ui(q, q, 2);
 
 }

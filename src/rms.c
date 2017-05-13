@@ -15,19 +15,7 @@
 #include "rms.h"
 #include "timeit.h"
 
-static inline
-void fbpowm(mpz_t rop, const mpz_t T[4][256], const uint32_t exp)
-{
-  const uint8_t *e = (uint8_t *) &exp;
-
-  mpz_mul(rop, T[0][e[0]], T[1][e[1]]);
-  mpz_mod(rop, rop, p);
-  mpz_mul(rop, rop, T[2][e[2]]);
-  mpz_mod(rop, rop, p);
-  mpz_mul(rop, rop, T[3][e[3]]);
-  mpz_mod(rop, rop, p);
-}
-
+INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
 
 static inline
 uint32_t mul_single(const elgamal_cipher_t c,
@@ -39,9 +27,11 @@ uint32_t mul_single(const elgamal_cipher_t c,
   //mpz_powm(op1, c1, cx, p);
   /* first block */
   powmp_ui(op1, c->c1, cx->_mp_d[0]);
+
   /* second block */
   powmp_ui(op2, c->c1e64, cx->_mp_d[1]);
   mpz_mul_modp(op1, op2, op1);
+
   /* third block */
   powmp_ui(op2, c->c1e128, cx->_mp_d[2]);
   mpz_mul_modp(op1, op2, op1);
@@ -57,8 +47,6 @@ uint32_t mul_single(const elgamal_cipher_t c,
 void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2)
 {
   uint32_t converted;
-  mpz_t op1, op2;
-  mpz_inits(op1, op2, NULL);
 
   rop->x = mul_single(sl1->w, sl2->x, sl2->cx);
 
@@ -108,7 +96,6 @@ int main()
   ssl2_init(t1);
   ssl2_init(t2);
 
-  INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
   for (int i = 0; i <  (int) 1e2; i++) {
 
     mpz_urandomb(y, _rstate, 1);
@@ -127,7 +114,8 @@ int main()
     START_TIMEIT();
     hss_mul(t1, r1, s1);
     END_TIMEIT();
-     hss_mul(t2, r2, s2);
+
+    hss_mul(t2, r2, s2);
 #ifndef NDEBUG
     gmp_printf("%Zx %Zx\n", x, y);
     gmp_printf("%d %d\n", s1->x, s2->x);

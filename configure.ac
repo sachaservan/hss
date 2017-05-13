@@ -33,7 +33,7 @@ AC_FUNC_MALLOC
 #AC_CHECK_FUNCS([dup2 setlocale strdup])
 
 # Clear out compiler/linker flags
-CFLAGS=" -pedantic -Wall "
+CFLAGS+=" -pedantic -Wall "
 
 # Shut up automake
 #AM_SILENT_RULES([yes])
@@ -43,8 +43,9 @@ AC_SUBST([AM_MAKEFLAGS], [--no-print-directory])
 
 AC_ARG_ENABLE(debug,
    AS_HELP_STRING([--enable-debug], [enable debugging, default: no]),
-   CFLAGS+=" -UNDEBUG -O0 -ggdb",
+   CFLAGS+=" -UNDEBUG -O0 -ggdb -fbounds-check -D_FORTIFY_SOURCE=1",
    CFLAGS+=" -DNDEBUG -O3 -march=native")
+
 
 AC_OUTPUT([Makefile
            src/Makefile
