@@ -40,17 +40,15 @@ void elgamal_encrypt(elgamal_cipher_t rop, const elgamal_key_t k, const mpz_t m)
   mpz_powm(rop->c2, rop->c2, x, p);
   mpz_set_ui(x, 2);
   mpz_powm(x, x, m, p);
-  mpz_mul(rop->c2, rop->c2, x);
-  mpz_mod(rop->c2, rop->c2, p);
+  mpz_mul_modp(rop->c2, rop->c2, x);
 
   mpz_clear(x);
 
   /* fixed bases */
-  //fb_set(rop->fb_c1, rop->c1);
-  /* fb_set(rop->fb_c1e64, rop->c1e64); */
-  /* fb_set(rop->fb_c1e128, rop->c1e128); */
-  /* fb_set(rop->fb_c2, rop->c2); */
-
+  fb_set(rop->fb_c1, rop->c1);
+  fb_set(rop->fb_c1e64, rop->c1e64);
+  fb_set(rop->fb_c1e128, rop->c1e128);
+  fb_set_small(rop->fb_c2, rop->c2);
 
 }
 
@@ -69,7 +67,6 @@ void elgamal_cipher_init(elgamal_cipher_t c)
   c->fb_c1 = fb_init();
   c->fb_c1e64 = fb_init();
   c->fb_c1e128 = fb_init();
-  c->fb_c1e128 = fb_init();
   c->fb_c2 = fb_init();
 }
 
@@ -78,7 +75,6 @@ void elgamal_cipher_clear(elgamal_cipher_t c)
   mpz_clears(c->c1, c->c2, c->c1e64, c->c1e128, NULL);   \
   fb_clear(c->fb_c1);
   fb_clear(c->fb_c1e64);
-  fb_clear(c->fb_c1e128);
   fb_clear(c->fb_c1e128);
   fb_clear(c->fb_c2);
 }
@@ -92,9 +88,9 @@ void elgamal_cipher_set(elgamal_cipher_t rop, const elgamal_cipher_t op1)
   mpz_set(rop->c1e128, op1->c1e128);
 
   /* fixed bases */
-  //fb_set(rop->fb_c1, rop->c1);
-  //fb_set(rop->fb_c1e64, rop->c1e64);
-  //fb_set(rop->fb_c1e128, rop->c1e128);
-  //fb_set(rop->fb_c2, rop->c2);
+  fb_copy(rop->fb_c1, op1->fb_c1);
+  fb_copy(rop->fb_c1e64, op1->fb_c1e64);
+  fb_copy(rop->fb_c1e128, op1->fb_c1e128);
+  fb_copy(rop->fb_c2, op1->fb_c2);
 
 }

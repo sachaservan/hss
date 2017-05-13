@@ -36,10 +36,10 @@ uint32_t mul_single(const elgamal_cipher_t c,
   powmp_ui(op2, c->c1e128, cx->_mp_d[2]);
   mpz_mul_modp(op1, op2, op1);
 
-  powmp_ui(op2, c->c2, x);
+  fb_powmp_ui(op2, c->fb_c2, x);
   mpz_mul_modp(op2, op2, op1);
 
-  const uint32_t converted = convert(op2->_mp_d);
+  const uint32_t converted = convert(PTR(op2));
   mpz_clears(op1, op2, NULL);
   return converted;
 }
@@ -96,21 +96,20 @@ int main()
   ssl2_init(t1);
   ssl2_init(t2);
 
+  mpz_urandomb(y, _rstate, 1);
+  mpz_urandomb(x, _rstate, 1);
+  /* mpz_set_ui(x, 1); */
+  /* mpz_set_ui(y, 1); */
+
+  ssl2_share(s1, s2, x, key->sk);
+  ssl2_open(test, s1, s2);
+  assert(!mpz_cmp(test, x));
+
+  ssl1_share(r1, r2, y, key);
+  ssl1_open(test, r1, r2, key);
+  assert(!mpz_cmp_ui(test, mpz_cmp_ui(y, 0) ? 2 : 1));
+
   for (int i = 0; i <  (int) 1e2; i++) {
-
-    mpz_urandomb(y, _rstate, 1);
-    mpz_urandomb(x, _rstate, 1);
-    /* mpz_set_ui(x, 1); */
-    /* mpz_set_ui(y, 1); */
-
-    ssl2_share(s1, s2, x, key->sk);
-    ssl2_open(test, s1, s2);
-    assert(!mpz_cmp(test, x));
-
-    ssl1_share(r1, r2, y, key);
-    ssl1_open(test, r1, r2, key);
-    assert(!mpz_cmp_ui(test, mpz_cmp_ui(y, 0) ? 2 : 1));
-
     START_TIMEIT();
     hss_mul(t1, r1, s1);
     END_TIMEIT();
