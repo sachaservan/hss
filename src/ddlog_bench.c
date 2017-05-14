@@ -15,7 +15,6 @@ int main()
   mpz_entropy_init();
 
   INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
-  uint32_t converted;
   for (int i=0; i < (int) (1e9 / (0x01 << strip_size) * 3.5); i++) {
     mpz_t n, n0;
     mpz_inits(n, n0, NULL);
@@ -23,7 +22,10 @@ int main()
     mpz_urandomm(n0, _rstate, p);
     mpz_set(n, n0);
     START_TIMEIT();
-    converted = convert(n->_mp_d);
+#ifndef NDEBUG
+    uint32_t converted =
+#endif
+    convert(n->_mp_d);
     END_TIMEIT();
     mpz_set(n, n0);
 #ifndef NDEBUG
