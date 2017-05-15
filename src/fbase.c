@@ -27,6 +27,9 @@ void fb_set_small(fbase_t pb, const mpz_t n)
     for (size_t i = 0; i <= 0xFF; i++) {
       uint64_t e =  (0x01 <<  8*j) * i;
       powmp_ui(pb[j][i], n, e);
+      _mpz_realloc(pb[j][i], 24);
+      SIZ(pb[j][i]) = 24;
+
     }
   }
   mpz_clear(e);
@@ -37,6 +40,8 @@ void fb_copy(fbase_t dst, fbase_t source)
   for (size_t j = 0; j < FB_FRAMES; j++) {
     for (size_t i = 0; i <= 0xFF; i++) {
       mpz_set(dst[j][i], source[j][i]);
+      _mpz_realloc(dst[j][i], 24);
+      SIZ(dst[j][i]) = 24;
     }
   }
 }
@@ -66,4 +71,19 @@ void fb_clear(fbase_t pb)
     }
   }
   free(pb);
+}
+
+
+void __attribute__((optimize("unroll-loops")))
+fb_powmp_ui(mpz_t rop, fbase_t pb, const uint64_t exp)
+{
+  const uint8_t *e = (uint8_t *) &exp;
+
+  mpz_mul_modp(rop, pb[0][e[0]], pb[1][e[1]]);
+  for (size_t j = 2; j < FB_FRAMES; j++) {
+    const size_t exp = e[j];
+    if (exp != 0) {
+      mpz_mul_modp(rop, rop,  pb[j][exp]);
+    }
+  }
 }

@@ -33,7 +33,7 @@ int main()
   fb_set(pbase, base);
 
   INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
-  for (int i = 0; i < (int) 1e3; i++) {
+  for (int i = 0; i < (int) 1e6; i++) {
     getrandom(&exp, 4, GRND_NONBLOCK);
     //exp =0xffff;
 

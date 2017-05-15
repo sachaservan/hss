@@ -1,5 +1,5 @@
 bin_PROGRAMS = rms ddlog_bench exp_bench
-#check_programs = test_ssl1
+check_PROGRAMS = group_test
 
 DDLOG = ddlog.c ddlog.h
 ELGAMAL = elgamal.c elgamal.h
@@ -8,9 +8,10 @@ FBASE = fbase.c fbase.h
 GROUP = group.c group.h
 HSS = hss.c hss.h
 TIMEIT = timeit.h
-#TESTS = $(check_programs)
+TESTS = $(check_PROGRAMS)
 
-#test_ssl1_SOURCES = test_ssl1.c
+group_test_SOURCES = group_test.c $(GROUP) $(ENTROPY)
+
 rms_SOURCES = rms.c $(DDLOG) $(ELGAMAL) $(ENTROPY) $(GROUP) $(FBASE) $(HSS) $(TIMEIT)
 ddlog_bench_SOURCES = ddlog_bench.c $(DDLOG) $(ENTROPY) $(GROUP) $(TIMEIT)
 exp_bench_SOURCES = exp_bench.c $(ENTROPY) $(GROUP) $(FBASE) $(TIMEIT)

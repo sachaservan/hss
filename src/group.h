@@ -11,6 +11,8 @@ extern const char* p_str;
 extern mpz_t p, q;
 extern const uint64_t gg;
 
+typedef __uint128_t uint128_t;
+
 void group_init();
 void group_clear();
 
@@ -20,6 +22,16 @@ void group_clear();
 
 #define SIZ(x) ((x)->_mp_size)
 #define PTR(x) ((x)->_mp_d)
+#define MPN_COPY(dst, src, l) \
+  do {                                                  \
+    for (int i = 0; i < l; i++) (dst)[i] = (src)[i]; \
+  } while(0)
+
+#define MPN_ZERO(dst, l)                                \
+  do {                                                  \
+    for (size_t i = 0; i < l; i++) (dst)[i] = 0;        \
+  } while(0)
+
 #define MPN_NORMALIZE(DST, NLIMBS)                                      \
   do {									\
     while (1)								\
@@ -62,5 +74,6 @@ void remp(mpz_t rop)
 }
 
 void powmp_ui(mpz_t rop, const mpz_t base, uint64_t exp);
+void mul_modp(mpz_t rop, mpz_t op1, mpz_t op2);
 
 #define mpz_mul_modp(rop, op1, op2) mpz_mul(rop, op1, op2); remp(rop);

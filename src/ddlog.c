@@ -8,8 +8,6 @@
 #include "group.h"
 #include "hss.h"
 
-typedef __uint128_t uint128_t;
-
 uint32_t lookup[256];
 uint32_t offset[256];
 

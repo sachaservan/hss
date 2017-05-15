@@ -17,6 +17,7 @@
 
 INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
 
+
 static inline
 uint32_t mul_single(const elgamal_cipher_t c,
                     const uint32_t x,
@@ -24,9 +25,7 @@ uint32_t mul_single(const elgamal_cipher_t c,
 {
   mpz_t op1, op2;
   mpz_inits(op1, op2, NULL);
-  //mpz_powm(op1, c1, cx, p);
   /* first block */
-
   fb_powmp_ui(op1, c->fb_c1, cx->_mp_d[0]);
 
   /* second block */
@@ -48,7 +47,6 @@ uint32_t mul_single(const elgamal_cipher_t c,
 void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2)
 {
   uint32_t converted;
-
   rop->x = mul_single(sl1->w, sl2->x, sl2->cx);
 
   mpz_set_ui(rop->cx, 0);
@@ -97,25 +95,26 @@ int main()
   ssl2_init(t1);
   ssl2_init(t2);
 
+  mpz_urandomb(y, _rstate, 1);
+  mpz_urandomb(x, _rstate, 1);
+  /* mpz_set_ui(x, 1); */
+  /* mpz_set_ui(y, 1); */
+
+  ssl2_share(s1, s2, x, key->sk);
+  ssl2_open(test, s1, s2);
+  assert(!mpz_cmp(test, x));
+
+  ssl1_share(r1, r2, y, key);
+
+  ssl1_open(test, r1, r2, key);
+  assert(!mpz_cmp_ui(test, mpz_cmp_ui(y, 0) ? 2 : 1));
+
+
+
   for (int i = 0; i <  (int) 1e2; i++) {
-    mpz_urandomb(y, _rstate, 1);
-    mpz_urandomb(x, _rstate, 1);
-    /* mpz_set_ui(x, 1); */
-    /* mpz_set_ui(y, 1); */
-
-    ssl2_share(s1, s2, x, key->sk);
-    ssl2_open(test, s1, s2);
-    assert(!mpz_cmp(test, x));
-
     START_TIMEIT();
-    ssl1_share(r1, r2, y, key);
-    END_TIMEIT();
-
-    ssl1_open(test, r1, r2, key);
-    assert(!mpz_cmp_ui(test, mpz_cmp_ui(y, 0) ? 2 : 1));
-
-
     hss_mul(t1, r1, s1);
+    END_TIMEIT();
     hss_mul(t2, r2, s2);
 #ifndef NDEBUG
     gmp_printf("%Zx %Zx\n", x, y);
