@@ -25,21 +25,21 @@ uint32_t mul_single(const elgamal_cipher_t c,
 {
   mpz_t op1, op2;
   mpz_inits(op1, op2, NULL);
-  /* first block */
-  fb_powmp_ui(op1, c->fb_c1, cx->_mp_d[0]);
 
-  /* second block */
+  /* c1: first block */
+  fb_powmp_ui(op1, c->fb_c1, cx->_mp_d[0]);
+  /* c1: second block */
   fb_powmp_ui(op2, c->fb_c1e64, cx->_mp_d[1]);
   mpz_mul_modp(op1, op2, op1);
-
-  /* third block */
+  /* c1: third block */
   fb_powmp_ui(op2, c->fb_c1e128, cx->_mp_d[2]);
   mpz_mul_modp(op1, op2, op1);
-
+  /* c2 */
   fb_powmp_ui(op2, c->fb_c2, x);
   mpz_mul_modp(op2, op2, op1);
 
   const uint32_t converted = convert(PTR(op2));
+
   mpz_clears(op1, op2, NULL);
   return converted;
 }
@@ -109,13 +109,12 @@ int main()
   ssl1_open(test, r1, r2, key);
   assert(!mpz_cmp_ui(test, mpz_cmp_ui(y, 0) ? 2 : 1));
 
-
-
   for (int i = 0; i <  (int) 1e2; i++) {
     START_TIMEIT();
     hss_mul(t1, r1, s1);
-    END_TIMEIT();
     hss_mul(t2, r2, s2);
+    END_TIMEIT();
+
 #ifndef NDEBUG
     gmp_printf("%Zx %Zx\n", x, y);
     gmp_printf("%d %d\n", s1->x, s2->x);
