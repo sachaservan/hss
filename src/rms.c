@@ -38,7 +38,9 @@ uint32_t mul_single(const elgamal_cipher_t c,
   fb_powmp_ui(op2, c->fb_c2, x);
   mpz_mul_modp(op2, op2, op1);
 
+  START_TIMEIT();
   const uint32_t converted = convert(PTR(op2));
+  END_TIMEIT();
 
   mpz_clears(op1, op2, NULL);
   return converted;
@@ -110,10 +112,8 @@ int main()
   assert(!mpz_cmp_ui(test, mpz_cmp_ui(y, 0) ? 2 : 1));
 
   for (int i = 0; i <  (int) 1e2; i++) {
-    START_TIMEIT();
     hss_mul(t1, r1, s1);
     hss_mul(t2, r2, s2);
-    END_TIMEIT();
 
 #ifndef NDEBUG
     gmp_printf("%Zx %Zx\n", x, y);

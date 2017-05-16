@@ -11,6 +11,11 @@
 uint32_t lookup[256];
 uint32_t offset[256];
 
+static const uint64_t topmask = ~(ULLONG_MAX >> halfstrip_size);
+static const uint64_t topbigmask = ~(ULLONG_MAX >> strip_size);
+static const uint64_t bottommask = (0x01  << halfstrip_size) -1;
+
+
 static inline
 void add_1(uint64_t *b, const size_t start, const size_t len, uint64_t a)
 {
@@ -27,9 +32,6 @@ void add_1(uint64_t *b, const size_t start, const size_t len, uint64_t a)
 
 uint32_t __attribute__((optimize("unroll-loops"))) convert(uint64_t * nn)
 {
-  static const uint64_t topmask = ~(ULLONG_MAX >> halfstrip_size);
-  static const uint64_t topbigmask = ~(ULLONG_MAX >> strip_size);
-  static const uint64_t bottommask = (0x01  << halfstrip_size) -1;
   uint32_t steps;
   size_t head = 23;
 #define next_head  ((head + 23) % 24)
@@ -67,7 +69,7 @@ uint32_t __attribute__((optimize("unroll-loops"))) convert(uint64_t * nn)
     for (uint32_t w2 = halfstrip_size; w2 < 64-halfstrip_size; w2 += halfstrip_size) {
       if (!(y & (topmask >> w2))) {
         const size_t previous = (y >> (64 - halfstrip_size - w2 + halfstrip_size)) & bottommask;
-        const uint32_t next =    (y >> (64 - halfstrip_size - w2 - halfstrip_size)) & bottommask;
+        const uint32_t next =   (y >> (64 - halfstrip_size - w2 - halfstrip_size)) & bottommask;
         if (next <= lookup[previous]) return steps + w2 - offset[previous];
       }
     }
@@ -107,9 +109,9 @@ uint32_t naif_convert(mpz_t n)
 
 void dlog_precompute()
 {
-  for (size_t i = 0; i <= 0xFF; i++) {
-    uint32_t j = ffs(i) ? ffs(i) - 1 : 8;
-    lookup[i] = 0xFF >> (8-j);
+  for (size_t i = 0; i <= bottommask; i++) {
+    uint32_t j = ffs(i) ? ffs(i) - 1 : halfstrip_size;
+    lookup[i] = bottommask >> (halfstrip_size-j);
     offset[i] = j;
   }
 }
