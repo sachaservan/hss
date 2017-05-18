@@ -1,9 +1,10 @@
 #pragma once
 
+#include "config.h"
 #include <stdint.h>
 #include <gmp.h>
 
-#define strip_size 16
+#define strip_size (ERROR)
 #define halfstrip_size ((strip_size)/2)
 
 extern uint32_t lookup[256];

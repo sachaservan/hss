@@ -5,6 +5,9 @@
 
 #include "elgamal.h"
 
+#define SK_SIZE   160
+#define SK_BLOCKS ((SK_SIZE)/(SS_BASE))
+
 void hss_init();
 void hss_del();
 
@@ -15,7 +18,7 @@ void hss_del();
 
 typedef struct ssl1 {
   elgamal_cipher_t w;
-  elgamal_cipher_t cw[160];
+  elgamal_cipher_t cw[SK_BLOCKS];
 } ssl1_t[1];
 
 

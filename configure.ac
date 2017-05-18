@@ -50,7 +50,7 @@ AC_ARG_ENABLE(debug,
 
 AC_DEFINE([ERROR],  [16], [log inverse of the error probability, default: 16.])
 AC_DEFINE([FB_BASE], [8], [log of precomputed base for group operation, default: 8.])
-AC_DEFINE([SS_BASE], [1], [log of secret shares representation, default: 1.])
+AC_DEFINE([SS_BASE], [2], [log of secret shares representation, default: 1.])
 
 AC_OUTPUT([Makefile
            src/Makefile

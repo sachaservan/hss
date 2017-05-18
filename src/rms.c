@@ -52,8 +52,8 @@ void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2)
   rop->x = mul_single(sl1->w, sl2->x, sl2->cx);
 
   mpz_set_ui(rop->cx, 0);
-  for (size_t t = 0; t < 160; t++) {
-    mpz_mul_2exp(rop->cx, rop->cx, 1);
+  for (size_t t = 0; t < SK_BLOCKS; t++) {
+    mpz_mul_2exp(rop->cx, rop->cx, SS_BASE);
     converted = mul_single(sl1->cw[t], sl2->x, sl2->cx);
     mpz_add_ui(rop->cx, rop->cx, converted);
   }
@@ -99,8 +99,8 @@ int main()
 
   mpz_urandomb(y, _rstate, 1);
   mpz_urandomb(x, _rstate, 1);
-  /* mpz_set_ui(x, 1); */
-  /* mpz_set_ui(y, 1); */
+  mpz_set_ui(x, 1);
+  mpz_set_ui(y, 1);
 
   ssl2_share(s1, s2, x, key->sk);
   ssl2_open(test, s1, s2);
@@ -110,6 +110,8 @@ int main()
 
   ssl1_open(test, r1, r2, key);
   assert(!mpz_cmp_ui(test, mpz_cmp_ui(y, 0) ? 2 : 1));
+
+
 
   for (int i = 0; i <  (int) 1e2; i++) {
     hss_mul(t1, r1, s1);

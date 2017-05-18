@@ -13,7 +13,7 @@ void elgamal_keygen(elgamal_key_t rop)
   mpz_set_ui(rop->pk, 2);
 
   //  mpz_urandomm(rop->sk, _rstate, q);
-  mpz_urandomb(rop->sk, _rstate, 160);
+  mpz_urandomb(rop->sk, _rstate, SK_SIZE);
   mpz_powm(rop->pk, rop->pk, rop->sk, p);
 }
 

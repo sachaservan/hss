@@ -11,7 +11,7 @@ void ssl1_init(ssl1_t s)
 {
   ELGAMAL_CIPHER(init, s->w);
 
-  for (size_t t = 0; t < 160; t++) {
+  for (size_t t = 0; t < SK_BLOCKS; t++) {
     ELGAMAL_CIPHER(init, s->cw[t]);
   }
 }
@@ -20,27 +20,33 @@ void ssl1_clear(ssl1_t s)
 {
   ELGAMAL_CIPHER(clear, s->w);
 
-  for (size_t t = 0; t < 160; t++) {
+  for (size_t t = 0; t < SK_BLOCKS; t++) {
     ELGAMAL_CIPHER(clear, s->cw[t]);
   }
 }
 
+
+
 void ssl1_share(ssl1_t r1, ssl1_t r2, const mpz_t v, const elgamal_key_t key)
 {
-  mpz_t zero;
-  mpz_init_set_ui(zero, 0);
+  mpz_t q, r, x;
+
+  mpz_init_set(q, key->sk);
+  mpz_inits(r, x, NULL);
 
   elgamal_encrypt_shares(r1->w, r2->w, key, v);
 
-  for (size_t t = 0; t < 160; t++) {
-    if (mpz_tstbit(key->sk, 159-t)) {
-      elgamal_encrypt_shares(r1->cw[t], r2->cw[t], key, v);
-    } else {
-      elgamal_encrypt_shares(r1->cw[t], r2->cw[t], key, zero);
-    }
+  for (size_t t = 0; t < SK_BLOCKS; t++) {
+    mpz_fdiv_r_2exp(r, q, SS_BASE);
+    mpz_fdiv_q_2exp(q, q, SS_BASE);
+    mpz_mul(x, v, r);
+    /* do it in reverse so that when computing it's just incremental */
+    elgamal_encrypt_shares(r1->cw[SK_BLOCKS - 1 - t],
+                           r2->cw[SK_BLOCKS - 1 - t],
+                           key, x);
   }
 
-  mpz_clear(zero);
+  mpz_clears(q, r, x, NULL);
 }
 
 void ssl1_open(mpz_t rop, const ssl1_t r1, const ssl1_t r2, const elgamal_key_t key)
