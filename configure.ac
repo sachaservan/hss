@@ -23,6 +23,7 @@ AC_GNU_SOURCE
 AC_CHECK_HEADERS([limits.h stdint.h stdlib.h string.h unistd.h])
 AC_CHECK_SIZEOF(mp_limb_t, 8, [#include <gmp.h>])
 AC_CHECK_SIZEOF(uint32_t, 4, [#include <stdint.h>])
+AC_CHECK_SIZEOF(unsigned long long, 8, [])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
@@ -43,9 +44,13 @@ AC_SUBST([AM_MAKEFLAGS], [--no-print-directory])
 
 AC_ARG_ENABLE(debug,
    AS_HELP_STRING([--enable-debug], [enable debugging, default: no]),
-   CFLAGS+=" -UNDEBUG -O3 -ggdb -fbounds-check -D_FORTIFY_SOURCE=1",
+   CFLAGS+=" -UNDEBUG -O0 -ggdb -fbounds-check -D_FORTIFY_SOURCE=1",
    CFLAGS+=" -DNDEBUG -O3 -march=native")
 
+
+AC_DEFINE([ERROR],  [16], [log inverse of the error probability, default: 16.])
+AC_DEFINE([FB_BASE], [8], [log of precomputed base for group operation, default: 8.])
+AC_DEFINE([SS_BASE], [1], [log of secret shares representation, default: 1.])
 
 AC_OUTPUT([Makefile
            src/Makefile

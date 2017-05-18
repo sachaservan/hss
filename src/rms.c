@@ -26,6 +26,7 @@ uint32_t mul_single(const elgamal_cipher_t c,
   mpz_t op1, op2;
   mpz_inits(op1, op2, NULL);
 
+  START_TIMEIT();
   /* c1: first block */
   fb_powmp_ui(op1, c->fb_c1, cx->_mp_d[0]);
   /* c1: second block */
@@ -37,10 +38,9 @@ uint32_t mul_single(const elgamal_cipher_t c,
   /* c2 */
   fb_powmp_ui(op2, c->fb_c2, x);
   mpz_mul_modp(op2, op2, op1);
-
-  START_TIMEIT();
-  const uint32_t converted = convert(PTR(op2));
   END_TIMEIT();
+
+  const uint32_t converted = convert(PTR(op2));
 
   mpz_clears(op1, op2, NULL);
   return converted;

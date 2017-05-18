@@ -24,7 +24,6 @@ int main()
   mpz_powm_ui(expected_mod, base, 2, p);
   mpz_pow_ui(test, base, 2);
   remp(test);
-  // gmp_printf("%Zx\n%Zx\n", test, expected_mod);
   assert(!mpz_cmp(test, expected_mod));
   mpz_clear(expected_mod);
 
@@ -33,9 +32,8 @@ int main()
   fb_set(pbase, base);
 
   INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
-  for (int i = 0; i < (int) 1e6; i++) {
-    getrandom(&exp, 4, GRND_NONBLOCK);
-    //exp =0xffff;
+  for (int i = 0; i < (int) 1e4; i++) {
+    getrandom(&exp, 8, GRND_NONBLOCK);
 
     mpz_powm_ui(expected, base, exp, p);
     START_TIMEIT();
