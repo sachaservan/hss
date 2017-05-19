@@ -12,7 +12,6 @@
 #include "entropy.h"
 #include "group.h"
 #include "hss.h"
-#include "rms.h"
 #include "timeit.h"
 
 INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
@@ -99,8 +98,8 @@ int main()
 
   mpz_urandomb(y, _rstate, 1);
   mpz_urandomb(x, _rstate, 1);
-  mpz_set_ui(x, 1);
-  mpz_set_ui(y, 1);
+  /* mpz_set_ui(x, 1); */
+  /* mpz_set_ui(y, 1); */
 
   ssl2_share(s1, s2, x, key->sk);
   ssl2_open(test, s1, s2);
