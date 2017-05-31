@@ -8,7 +8,19 @@
 #define SK_SIZE   160
 #define SK_BLOCKS ((SK_SIZE)/(SS_BASE))
 
-void hss_init();
+#define hss_init()                              \
+  do {                                          \
+    group_init();                               \
+    mpz_entropy_init();                         \
+    dlog_precompute();                          \
+  } while (0)
+
+#define hss_clear()                             \
+  do {                                          \
+    group_clear();                              \
+  } while (0)
+
+
 void hss_del();
 
 

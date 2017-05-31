@@ -14,9 +14,7 @@ INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
 
 int main()
 {
-  group_init();
-  mpz_entropy_init();
-  dlog_precompute();
+  hss_init();
 
   mpz_t test;
   mpz_init(test);
@@ -97,6 +95,6 @@ int main()
 
   mpz_clears(x, y, NULL);
   ELGAMAL_KEY(clear, key);
-  group_clear();
+  hss_clear();
   return 0;
 }
