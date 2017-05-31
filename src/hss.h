@@ -40,3 +40,6 @@ void ssl2_init(ssl2_t s);
 void ssl2_clear(ssl2_t s);
 void ssl2_share(ssl2_t s1, ssl2_t s2, const mpz_t v, const mpz_t sk);
 void ssl2_open(mpz_t rop, const ssl2_t s1, const ssl2_t s2);
+
+
+void hss_mul(ssl2_t rop, const ssl1_t sl1, const ssl2_t sl2);
