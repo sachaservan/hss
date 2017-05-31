@@ -6,7 +6,7 @@
 
 #include "group.h"
 
-#define FB_FRAMES (64/(FB_BASE))
+#define FB_FRAMES (64/(FB_BASE) + (64 % (FB_BASE) != 0))
 #define FB_MASK   ((1 << (FB_BASE)) - 1)
 
 typedef mpz_t        fbase_unit[1 << FB_BASE];

@@ -2,12 +2,16 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.65])
-AC_INIT([ccs], [0.1], [michele.orru@ens.fr])
-AM_INIT_AUTOMAKE
+AC_INIT([hss], [0.1], [michele.orru@ens.fr])
+
+
 AC_CONFIG_SRCDIR([src/rms.c])
 AC_CONFIG_HEADERS([src/config.h])
 
 # Checks for programs.
+
+AC_CHECK_TARGET_TOOL([latexmk], [latexmk], [no])
+#AS_IF([test "x$latexmk" = "xno"], [AC_MSG_ERROR([cannot find pdflatex.])])
 AC_PROG_CC([gcc clang cc])
 AC_PROG_CC_C99
 AC_PROG_RANLIB
@@ -33,6 +37,9 @@ AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MALLOC
 #AC_CHECK_FUNCS([dup2 setlocale strdup])
 
+
+AM_INIT_AUTOMAKE
+
 # Clear out compiler/linker flags
 CFLAGS+=" -pedantic -Wall "
 
@@ -49,8 +56,9 @@ AC_ARG_ENABLE(debug,
 
 
 AC_DEFINE([ERROR],  [16], [log inverse of the error probability, default: 16.])
-AC_DEFINE([FB_BASE], [8], [log of precomputed base for group operation, default: 8.])
-AC_DEFINE([SS_BASE], [2], [log of secret shares representation, default: 1.])
+AC_DEFINE([FB_BASE], [10], [log of precomputed base for group operation, default: 8.])
+AC_DEFINE([SS_BASE], [1], [log of secret shares representation, default: 1.])
+
 
 AC_OUTPUT([Makefile
            src/Makefile

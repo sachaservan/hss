@@ -12,6 +12,11 @@ void elgamal_keygen(elgamal_key_t rop)
 {
   mpz_set_ui(rop->pk, 2);
 
+  /*
+     yes we know GMP's RNG is NOT cryptographically secure.
+     we laughed at the "random functions" page, too.
+     however a rng mod p is not really the point of this project is it?
+  */
   //  mpz_urandomm(rop->sk, _rstate, q);
   mpz_urandomb(rop->sk, _rstate, SK_SIZE);
   mpz_powm(rop->pk, rop->pk, rop->sk, p);
