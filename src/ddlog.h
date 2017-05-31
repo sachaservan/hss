@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <gmp.h>
 
-#define strip_size (ERROR)
+#define strip_size (ERROR - 1)
 #define halfstrip_size ((strip_size)/2)
 
 extern uint32_t lookup[256];

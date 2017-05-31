@@ -45,7 +45,7 @@ uint32_t __attribute__((optimize("unroll-loops"))) convert(uint64_t * nn)
   for (uint32_t w2 = halfstrip_size; w2 < 64-halfstrip_size; w2 += halfstrip_size) {
     if (!(x & (topmask >> w2))) {
       const size_t previous = (x >> (64 - halfstrip_size - w2 + halfstrip_size)) & bottommask;
-      const uint32_t next =    (x >> (64 - halfstrip_size - w2 - halfstrip_size)) & bottommask;
+      const uint32_t next =   (x >> (64 - halfstrip_size - w2 - halfstrip_size)) & bottommask;
       if (next <= lookup[previous]) return w2 - offset[previous];
     }
   }
