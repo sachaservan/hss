@@ -44,10 +44,9 @@ uint32_t __attribute__((optimize("unroll-loops"))) convert(uint64_t * nn)
 #define next_head  ((head + 23) % 24)
 #define tail       ((head + 1)  % 24)
 #define next_tail  ((head + 2)  % 24)
-#define x (nn[head])
-#define y (nn[next_head])
 
   /** Check the most significant block */
+  const uint64_t x = nn[head];
   for (uint32_t w2 = clz(x) + halfstrip_size - (clz(x) % halfstrip_size);
        w2 < 64 - halfstrip_size;
        w2 += halfstrip_size) {
@@ -59,6 +58,9 @@ uint32_t __attribute__((optimize("unroll-loops"))) convert(uint64_t * nn)
   }
 
   for (steps = 64; true; steps += 64) {
+    const uint64_t x = nn[head];
+    const uint64_t y = nn[next_head];
+
     if (!(x & bottommask)) {
       const size_t previous = (x >> halfstrip_size) & bottommask;
       const uint32_t next   =  y >> (64 - halfstrip_size);
@@ -89,6 +91,7 @@ uint32_t __attribute__((optimize("unroll-loops"))) convert(uint64_t * nn)
     nn[tail] = al;
     add_1(nn, next_tail, 24, ah);
   }
+
 }
 
 bool distinguished(mpz_t n)

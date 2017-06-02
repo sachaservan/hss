@@ -15,7 +15,7 @@ int main()
   mpz_entropy_init();
 
   INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
-  for (int i=0; i < (int) (1e6); i++) {
+  for (int i=0; i < (int) (1e9 / (0x01 << strip_size) * 3.5); i++) {
     mpz_t n, n0;
     mpz_inits(n, n0, NULL);
 

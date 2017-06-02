@@ -54,8 +54,7 @@ AC_ARG_ENABLE(debug,
    CFLAGS+=" -UNDEBUG -O0 -ggdb -fbounds-check -D_FORTIFY_SOURCE=1",
    CFLAGS+=" -DNDEBUG -O3 -march=native")
 
-
-AC_DEFINE([FAILURE],  [9], [log inverse of the failure probability, default: 17.])
+AC_DEFINE([FAILURE],  [17], [log inverse of the failure probability, default: 17.])
 AC_DEFINE([FB_BASE], [10], [log of precomputed base for group operation, default: 8.])
 AC_DEFINE([SS_BASE], [1], [log of secret shares representation, default: 1.])
 
