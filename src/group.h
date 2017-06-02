@@ -76,4 +76,14 @@ void remp(mpz_t rop)
 void powmp_ui(mpz_t rop, const mpz_t base, uint64_t exp);
 void mul_modp(mpz_t rop, mpz_t op1, mpz_t op2);
 
-#define mpz_mul_modp(rop, op1, op2) mpz_mul(rop, op1, op2); remp(rop);
+#define mpz_mul_modp(rop, op1, op2)             \
+  do {                                          \
+    mpz_mul(rop, op1, op2);                     \
+    remp(rop);                                  \
+  } while (0)
+
+#define mpz_mul_ui_modp(rop, op1, op2)          \
+  do {                                          \
+    mpz_mul_ui(rop, op1, op2);                  \
+    remp(rop);                                  \
+  } while (0)

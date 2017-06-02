@@ -1,7 +1,7 @@
 BENCHMARKS = rms_bench ddlog_bench exp_bench mul_bench
 
 bin_PROGRAMS = $(BENCHMARKS) sanity_check
-check_PROGRAMS = group_test
+check_PROGRAMS = group_test ddlog_test
 
 DDLOG = ddlog.c ddlog.h
 ELGAMAL = elgamal.c elgamal.h
@@ -14,6 +14,9 @@ TESTS = $(check_PROGRAMS)
 
 group_test_SOURCES = group_test.c \
 	$(GROUP) $(ENTROPY)
+ddlog_test_SOURCES = ddlog_test.c \
+	$(GROUP) $(ENTROPY) $(DDLOG)
+
 rms_bench_SOURCES = rms_bench.c \
 	$(DDLOG) $(ELGAMAL) $(ENTROPY) $(GROUP) $(FBASE) $(HSS) $(TIMEIT)
 ddlog_bench_SOURCES = ddlog_bench.c \
