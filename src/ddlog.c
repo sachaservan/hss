@@ -9,8 +9,8 @@
 #include "group.h"
 #include "hss.h"
 
-uint32_t lookup[256];
-uint32_t offset[256];
+uint64_t lookup[0x01 << strip_size];
+uint64_t offset[0x01 << strip_size];
 
 static const uint64_t topmask = ~(ULLONG_MAX >> halfstrip_size);
 //static const uint64_t topbigmask = ~(ULLONG_MAX >> strip_size);

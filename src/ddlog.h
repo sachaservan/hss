@@ -9,8 +9,8 @@
 #define strip_size (FAILURE - 1)
 #define halfstrip_size ((strip_size)/2)
 
-extern uint32_t lookup[256];
-extern uint32_t offset[256];
+extern uint64_t lookup[0x01 << strip_size];
+extern uint64_t offset[0x01 << strip_size];
 
 
 uint32_t convert(uint64_t *nn);

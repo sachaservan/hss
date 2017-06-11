@@ -44,7 +44,7 @@ AM_INIT_AUTOMAKE
 CFLAGS+=" -pedantic -Wall "
 
 # Shut up automake
-#AM_SILENT_RULES([yes])
+AM_SILENT_RULES([yes])
 AC_SUBST([AM_MAKEFLAGS], [--no-print-directory])
 
 # Adding package options
@@ -54,9 +54,23 @@ AC_ARG_ENABLE(debug,
    CFLAGS+=" -UNDEBUG -O0 -ggdb -fbounds-check -D_FORTIFY_SOURCE=1",
    CFLAGS+=" -DNDEBUG -O3 -march=native")
 
-AC_DEFINE([FAILURE],  [17], [log inverse of the failure probability, default: 17.])
-AC_DEFINE([FB_BASE], [10], [log of precomputed base for group operation, default: 8.])
-AC_DEFINE([SS_BASE], [1], [log of secret shares representation, default: 1.])
+
+AC_ARG_VAR([failure], [failure prob.])
+AS_IF([test "x$failure" = x], [failure="17"])
+
+
+AC_ARG_VAR([failure], [failure prob.])
+AS_IF([test "x$failure" = x], [failure="17"])
+AC_DEFINE_UNQUOTED([FAILURE], [$failure], [log inverse of the failure probability, default: 17.])
+
+AC_ARG_VAR([fb_base], [fixed base])
+AS_IF([test "x$fb_base" = x], [fb_base="8"])
+AC_DEFINE_UNQUOTED([FB_BASE], [$fb_base], [log of precomputed base for group operation, default: 8.])
+
+
+AC_ARG_VAR([ss_base], [ss base])
+AS_IF([test "x$ss_base" = x], [ss_base="1"])
+AC_DEFINE_UNQUOTED([SS_BASE], [$ss_base], [log of secret shares representation, default: 1.])
 
 
 AC_OUTPUT([Makefile
