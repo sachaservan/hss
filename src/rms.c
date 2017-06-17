@@ -12,7 +12,6 @@
 #include "entropy.h"
 #include "group.h"
 #include "hss.h"
-#include "timeit.h"
 
 static inline
 uint32_t mul_single(const elgamal_cipher_t c,

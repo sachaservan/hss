@@ -79,7 +79,7 @@ void mul_modp(mpz_t rop, mpz_t op1, mpz_t op2);
 #define mpz_mul_modp(rop, op1, op2)             \
   do {                                          \
     mpz_mul(rop, op1, op2);                     \
-    remp(rop);                                  \
+    remp(rop);                       \
   } while (0)
 
 #define mpz_mul_ui_modp(rop, op1, op2)          \

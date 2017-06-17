@@ -57,16 +57,11 @@ AC_ARG_ENABLE(debug,
 
 AC_ARG_VAR([failure], [failure prob.])
 AS_IF([test "x$failure" = x], [failure="17"])
-
-
-AC_ARG_VAR([failure], [failure prob.])
-AS_IF([test "x$failure" = x], [failure="17"])
 AC_DEFINE_UNQUOTED([FAILURE], [$failure], [log inverse of the failure probability, default: 17.])
 
 AC_ARG_VAR([fb_base], [fixed base])
 AS_IF([test "x$fb_base" = x], [fb_base="8"])
 AC_DEFINE_UNQUOTED([FB_BASE], [$fb_base], [log of precomputed base for group operation, default: 8.])
-
 
 AC_ARG_VAR([ss_base], [ss base])
 AS_IF([test "x$ss_base" = x], [ss_base="1"])
