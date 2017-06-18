@@ -55,6 +55,9 @@ AC_ARG_ENABLE(debug,
    CFLAGS+=" -DNDEBUG -O3 -march=native")
 
 
+
+AC_DEFINE([SEP], ["\t"], [separator for benchmarks])
+
 AC_ARG_VAR([failure], [failure prob.])
 AS_IF([test "x$failure" = x], [failure="17"])
 AC_DEFINE_UNQUOTED([FAILURE], [$failure], [log inverse of the failure probability, default: 17.])

@@ -138,7 +138,26 @@ bool distinguished(mpz_t n)
   return (n->_mp_d[23] & failuremask) == distinguished_limb;
 }
 
-uint32_t naif_convert(mpz_t n)
+
+
+
+void dlog_precompute()
+{
+  for (size_t i = 0; i <= bottommask; i++) {
+    uint32_t j = ffs(i) ? ffs(i) - 1 : halfstrip_size;
+    lookup[i] = bottommask >> (halfstrip_size - j);
+    offset[i] = j;
+  }
+}
+
+
+/** Alternative implementations of the conversion method.
+ *  Used for testing and/or comparing past results.
+ */
+
+
+
+uint32_t convert_naif(mpz_t n)
 {
   uint32_t steps;
 
@@ -221,13 +240,4 @@ uint32_t __attribute__((optimize("unroll-loops"))) convert_ec17(uint64_t * nn)
     add_1(nn, next_tail, 24, ah);
   }
 
-}
-
-void dlog_precompute()
-{
-  for (size_t i = 0; i <= bottommask; i++) {
-    uint32_t j = ffs(i) ? ffs(i) - 1 : halfstrip_size;
-    lookup[i] = bottommask >> (halfstrip_size - j);
-    offset[i] = j;
-  }
 }

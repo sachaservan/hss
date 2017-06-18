@@ -20,13 +20,13 @@ int main()
   mpz_entropy_init();
 
 
-  for (int i=0; i < (int) (1e3); i++) {
+  for (int i=0; i < (int) (1e2); i++) {
     mpz_t n, n0;
     mpz_inits(n, n0, NULL);
 
     mpz_urandomm(n0, _rstate, p);
     mpz_set(n, n0);
-    uint32_t expected = naif_convert(n);
+    uint32_t expected = convert_naif(n);
     mpz_set(n, n0);
     uint32_t converted = convert(n->_mp_d);
     printf("%d %d\n", converted, expected);

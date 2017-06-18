@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -7,8 +9,6 @@
 #include "entropy.h"
 #include "group.h"
 #include "timeit.h"
-
-#define SEP "\t"
 
 int main()
 {

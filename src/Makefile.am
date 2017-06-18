@@ -25,6 +25,7 @@ exp_bench_SOURCES = exp_bench.c \
 	$(ENTROPY) $(GROUP) $(FBASE) $(TIMEIT)
 mul_bench_SOURCES = mul_bench.c \
 	$(ENTROPY) $(GROUP)
+mul_bench_LDADD = -lcrypto -lssl
 
 sanity_check_SOURCES = sanity_check.c \
 	$(DDLOG) $(ELGAMAL) $(ENTROPY) $(GROUP) $(FBASE) $(HSS) $(TIMEIT)

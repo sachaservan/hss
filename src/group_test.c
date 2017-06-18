@@ -14,7 +14,7 @@ int main()
   mpz_entropy_init();
   mpz_inits(test, expected, x, y, NULL);
 
-  for (int i = 0; i < 1e6; i++) {
+  for (int i = 0; i < 1e4; i++) {
     mpz_urandomm(x, _rstate, p);
     mpz_urandomm(y, _rstate, p);
 
