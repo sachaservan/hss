@@ -16,7 +16,8 @@ int main()
   dlog_precompute();
   mpz_entropy_init();
 
-  for (int i=0; i < (int) (0x01 << 16); i++) {
+  const int repeat = (0x01 << FAILURE) * 3;
+  for (int i=0; i < repeat; i++) {
     mpz_t n;
     mpz_init(n);
 

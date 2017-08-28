@@ -1,4 +1,4 @@
-BENCHMARKS = rms_bench ddlog_bench exp_bench mul_bench
+BENCHMARKS = rms_bench ddlog_bench exp_bench group_bench
 
 bin_PROGRAMS = $(BENCHMARKS) sanity_check
 check_PROGRAMS = group_test ddlog_test
@@ -23,9 +23,9 @@ ddlog_bench_SOURCES = ddlog_bench.c \
 	$(DDLOG) $(ENTROPY) $(GROUP) $(TIMEIT)
 exp_bench_SOURCES = exp_bench.c \
 	$(ENTROPY) $(GROUP) $(FBASE) $(TIMEIT)
-mul_bench_SOURCES = mul_bench.c \
+group_bench_SOURCES = group_bench.c \
 	$(ENTROPY) $(GROUP)
-mul_bench_LDADD = -lcrypto -lssl
+group_bench_LDADD = -lcrypto -lssl
 
 sanity_check_SOURCES = sanity_check.c \
 	$(DDLOG) $(ELGAMAL) $(ENTROPY) $(GROUP) $(FBASE) $(HSS) $(TIMEIT)

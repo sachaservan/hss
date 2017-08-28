@@ -9,8 +9,6 @@
 #include "hss.h"
 #include "timeit.h"
 
-INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
-
 
 int main()
 {
@@ -65,6 +63,8 @@ int main()
 
 
   for (int i = 0; i <  (int) 1e2; i++) {
+    INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
+
     START_TIMEIT();
     hss_mul(t1, r1, s1);
     END_TIMEIT();
@@ -83,9 +83,11 @@ int main()
     mpz_abs(test, test);
     assert(((!mpz_cmp_ui(xy, 1) && !mpz_cmp(test, key->sk))) ||
            ((!mpz_cmp_ui(xy, 0)) && !mpz_cmp_ui(test, 0)));
+
+    printf("%d" SEP  "%d" SEP "%d" SEP TIMEIT_FORMAT "\n",
+           FAILURE, FB_BASE, SS_BASE, GET_TIMEIT());
   }
 
-  printf(TIMEIT_FORMAT "\n", GET_TIMEIT());
   ssl2_clear(s1);
   ssl2_clear(s2);
   ssl1_clear(r1);

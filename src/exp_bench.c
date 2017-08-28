@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <assert.h>
 #include <stdio.h>
 
@@ -31,8 +33,9 @@ int main()
   fbase_ptr pbase = fb_init();
   fb_set(pbase, base);
 
-  INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
   for (int i = 0; i < (int) 1e4; i++) {
+    INIT_TIMEIT(CLOCK_PROCESS_CPUTIME_ID);
+
     getrandom(&exp, 8, GRND_NONBLOCK);
 
     mpz_powm_ui(expected, base, exp, p);
@@ -41,11 +44,10 @@ int main()
     END_TIMEIT();
 
     assert(!mpz_cmp(test, expected));
-
+    printf("%d" SEP TIMEIT_FORMAT "\n", FB_BASE, GET_TIMEIT());
   }
 
 
-  printf(TIMEIT_FORMAT "\n", GET_TIMEIT());
   fb_clear(pbase);
   mpz_clears(test, expected, base, NULL);
 }
